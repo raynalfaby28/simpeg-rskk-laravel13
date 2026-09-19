@@ -52,35 +52,46 @@
   </div>
 </div>
 
-<div class="flex gap-2 mb-8">
-  <form method="POST" action="{{ route('approvals.approve', $request) }}" id="form-approve">
-    @csrf
-    <button type="submit" id="btn-approve" class="btn btn-primary inline-flex items-center gap-1.5">
-      <svg style="width:14px;height:14px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-      Setujui
+@if($request->status !== 'pending')
+  <div class="card p-5 mb-8 text-[13px]" style="border-left:3px solid var(--ink-300); color:var(--ink-600)">
+    Pengajuan ini sudah diproses (status: <b class="capitalize">{{ $request->status }}</b>) dan tidak dapat diputuskan lagi.
+  </div>
+@elseif($canDecide)
+  <div class="flex gap-2 mb-8">
+    <form method="POST" action="{{ route('approvals.approve', $request) }}" id="form-approve">
+      @csrf
+      <button type="submit" id="btn-approve" class="btn btn-primary inline-flex items-center gap-1.5">
+        <svg style="width:14px;height:14px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+        Setujui
+      </button>
+    </form>
+
+    <button type="button" onclick="document.getElementById('reject-form').classList.toggle('hidden')"
+      class="btn btn-outline inline-flex items-center gap-1.5" style="color:var(--red-600)">
+      <svg style="width:14px;height:14px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      Tolak
     </button>
-  </form>
+  </div>
 
-  <button type="button" onclick="document.getElementById('reject-form').classList.toggle('hidden')"
-    class="btn btn-outline inline-flex items-center gap-1.5" style="color:var(--red-600)">
-    <svg style="width:14px;height:14px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-    Tolak
-  </button>
-</div>
-
-<div id="reject-form" class="hidden card p-6 mb-8">
-  <form method="POST" action="{{ route('approvals.reject', $request) }}" id="form-reject">
-    @csrf
-    <label class="flabel">Alasan Penolakan <span class="req">*</span></label>
-    <textarea name="rejection_reason" rows="3" required
-      class="input mb-3"
-      placeholder="Contoh: Dokumen pendukung belum dilampirkan"></textarea>
-    <button type="submit" id="btn-reject" class="btn btn-danger">Kirim Penolakan</button>
-  </form>
-</div>
+  <div id="reject-form" class="hidden card p-6 mb-8">
+    <form method="POST" action="{{ route('approvals.reject', $request) }}" id="form-reject">
+      @csrf
+      <label class="flabel">Alasan Penolakan <span class="req">*</span></label>
+      <textarea name="rejection_reason" rows="3" required
+        class="input mb-3"
+        placeholder="Contoh: Dokumen pendukung belum dilampirkan"></textarea>
+      <button type="submit" id="btn-reject" class="btn btn-danger">Kirim Penolakan</button>
+    </form>
+  </div>
+@else
+  <div class="card p-5 mb-8 text-[13px]" style="border-left:3px solid var(--amber-500); color:var(--ink-600)">
+    Anda tidak memiliki izin untuk memproses pengajuan ini. Hanya Super Admin dan Admin (untuk pengajuan pegawai lain, bukan pengajuan sendiri) yang dapat menyetujui atau menolak.
+  </div>
+@endif
 
 <script>
-  document.getElementById('form-approve').addEventListener('submit', function (e) {
+  const approveForm = document.getElementById('form-approve');
+  if (approveForm) approveForm.addEventListener('submit', function (e) {
     const btn = document.getElementById('btn-approve');
     btn.disabled = true;
     btn.style.opacity = .7;
@@ -88,7 +99,8 @@
     setTimeout(() => this.submit(), 500);
     e.preventDefault();
   });
-  document.getElementById('form-reject').addEventListener('submit', function (e) {
+  const rejectForm = document.getElementById('form-reject');
+  if (rejectForm) rejectForm.addEventListener('submit', function (e) {
     const btn = document.getElementById('btn-reject');
     btn.disabled = true;
     btn.style.opacity = .7;

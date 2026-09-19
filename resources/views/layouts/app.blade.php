@@ -47,7 +47,7 @@
     --shadow-md:0 12px 30px -12px rgba(16,24,40,.18);
 
     /* Layout geometry */
-    --sidebar-w:256px;
+    --sidebar-w:232px;
     --sidebar-w-collapsed:80px;
     --topbar-h:64px;
     --content-pad:24px;
@@ -215,7 +215,9 @@
   /* --- Content --- */
   .main-content{ flex:1; width:100%; padding:28px var(--content-pad) 48px; }
   .main-inner{ max-width:1480px; margin:0 auto; width:100%; }
-  .profile-wrap{ max-width:1180px; margin:0 auto; }
+  .profile-wrap{ max-width:1420px; margin:0 auto; }
+  .profile-wrap .page-title{ font-size:34px; }
+  .profile-wrap .page-desc{ font-size:14px; }
 
   /* Page head */
   .page-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:18px; flex-wrap:wrap; margin-bottom:24px; }

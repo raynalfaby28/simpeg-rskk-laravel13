@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ChangeRequest;
 use App\Models\AuditLog;
+use App\Models\ChangeRequest;
+use App\Models\Employee;
 use App\Models\EmployeeCategory;
 use App\Models\EmploymentStatus;
 use App\Models\Notification;
@@ -11,9 +12,10 @@ use App\Models\Position;
 use App\Models\Rank;
 use App\Models\User;
 use App\Models\WorkUnit;
-use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class ProfileController extends Controller
@@ -34,7 +36,20 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): View
     {
-        $employee = $request->user()->employee;
+        $user = $request->user();
+        $employee = $user->employee;
+
+        // Admin yang akunnya belum terhubung ke record pegawai mendapat record
+        // kosong agar dapat melengkapi profil pribadinya sendiri. Super Admin
+        // tidak dipaksa memiliki profil pegawai.
+        if (! $employee && $user->role !== 'super_admin') {
+            $employee = Employee::create([
+                'user_id' => $user->id,
+                'nip' => $user->nip,
+                'nama_lengkap' => $user->name,
+                'is_draft' => true,
+            ]);
+        }
 
         $pendingRequest = $employee
             ? ChangeRequest::where('employee_id', $employee->id)
@@ -62,6 +77,7 @@ class ProfileController extends Controller
     public function update(Request $request): RedirectResponse
     {
         $employee = $request->user()->employee;
+        abort_if(! $employee, 403, 'Akun Anda belum terhubung ke data pegawai.');
 
         $data = $request->validate([
             'nama_lengkap' => ['required', 'string', 'max:255'],
@@ -106,20 +122,31 @@ class ProfileController extends Controller
             'status' => 'pending',
         ]);
 
-        // Notifikasi ke seluruh Super Admin
-        $superAdmins = User::where('role', 'super_admin')->pluck('id');
-        foreach ($superAdmins as $saId) {
+        // Notifikasi ke Super Admin dan Admin agar pengajuan dapat diproses
+        // sesuai kewenangan (approver tidak boleh memproses pengajuannya sendiri).
+        $recipients = User::whereIn('role', ['super_admin', 'admin'])
+            ->where('id', '!=', $request->user()->id)
+            ->pluck('id');
+
+        foreach ($recipients as $recipientId) {
             Notification::send(
-                userId: $saId,
+                userId: $recipientId,
                 title: 'Ada pengajuan perubahan data baru',
-                body: $employee->nama_lengkap . ' mengajukan perubahan data pribadi.',
+                body: $employee->nama_lengkap.' mengajukan perubahan data pribadi.',
                 url: route('approvals.show', $requestObj),
             );
         }
 
+        AuditLog::record(
+            action: 'update',
+            module: 'Profil',
+            reference: $employee,
+            description: 'Mengajukan perubahan data profil '.$employee->nama_lengkap.' (modul profil).',
+        );
+
         return redirect()
             ->route('profile.edit')
-            ->with('success', 'Perubahan data berhasil diajukan, menunggu persetujuan Super Admin.');
+            ->with('success', 'Perubahan data berhasil diajukan, menunggu persetujuan.');
     }
 
     /**
@@ -145,7 +172,7 @@ class ProfileController extends Controller
             action: 'update',
             module: 'Profil',
             reference: $employee,
-            description: 'Memperbarui foto profil ' . $employee->nama_lengkap,
+            description: 'Memperbarui foto profil '.$employee->nama_lengkap,
         );
 
         return redirect()->route('profile.edit')->with('success', 'Foto profil berhasil diperbarui.');
@@ -168,7 +195,7 @@ class ProfileController extends Controller
                 action: 'update',
                 module: 'Profil',
                 reference: $employee,
-                description: 'Menghapus foto profil ' . $employee->nama_lengkap,
+                description: 'Menghapus foto profil '.$employee->nama_lengkap,
             );
         }
 

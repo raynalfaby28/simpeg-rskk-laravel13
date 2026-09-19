@@ -17,17 +17,21 @@
       radial-gradient(55% 45% at 6% 4%, rgba(37,99,235,.07), transparent 62%),
       radial-gradient(45% 40% at 96% 96%, rgba(56,189,248,.08), transparent 60%),
       linear-gradient(180deg, #F8FAFC, #F1F5F9);
-    animation: bgIn .9s ease both;
+    animation: bgIn .55s ease both;
   }
   @keyframes bgIn { from { opacity: 0; } to { opacity: 1; } }
   a { text-decoration: none; }
 
-  .login-page { min-height: 100vh; display: flex; flex-direction: column; }
+  .login-page { min-height: 100vh; display: flex; flex-direction: column; animation: loginIn .5s ease-out both; }
+  @keyframes loginIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
   /* Brand mini (muncul hanya di tampilan satu kolom / mobile): LOGO → VISUAL → CARD */
   .mob-brand { display: none; text-align: center; padding: 4px 20px 0; }
   .mob-brand img { width: 46px; height: auto; object-fit: contain; display: block; margin: 0 auto 8px; }
-  .mob-brand .mb-name { font-size: 20px; font-weight: 800; letter-spacing: -.02em; color: #0F172A; }
+  .mob-brand .mb-name { font-size: 20px; font-weight: 800; letter-spacing: -.02em; color: #0F172A;
+    background: linear-gradient(90deg, #1D4ED8 0%, #2563EB 22%, #3B82F6 40%, #38BDF8 60%, #0EA5E9 78%, #1D4ED8 100%);
+    background-size: 220% auto; -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; animation: textFlow 5.5s linear infinite; }
   .mob-brand .mb-sub { font-size: 12px; font-weight: 500; color: #64748B; margin-top: 2px; }
 
   /* ===== Area utama: grid landscape, visual kiri jauh lebih besar ===== */
@@ -55,9 +59,8 @@
   .illust .deco { position: absolute; border-radius: 50%; pointer-events: none; }
   .illust .deco.d1 { width: 380px; height: 380px; background: rgba(255,255,255,.5); top: -120px; left: -100px; animation: drift 7s ease-in-out infinite; }
   .illust .deco.d2 { width: 300px; height: 300px; background: rgba(255,255,255,.42); bottom: -110px; right: -80px; animation: drift 8s ease-in-out 1.1s infinite; }
-  .illust .deco.d3 { width: 250px; height: 250px; border: 2px dashed rgba(59,130,246,.22); top: 16%; right: 5%; animation: ringSpin 40s linear infinite; }
+  .illust .deco.d3 { width: 250px; height: 250px; border: 2px dashed rgba(59,130,246,.22); top: 16%; right: 5%; }
   .illust .deco.d4 { width: 150px; height: 150px; background: rgba(125,211,252,.28); bottom: 10%; left: 6%; animation: haloPulse 6s ease-in-out .8s infinite; }
-  @keyframes ringSpin { to { transform: rotate(360deg); } }
   @keyframes drift { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(0, -8px); } }
 
   /* Ambient glow + parallax halus (desktop) */
@@ -120,18 +123,16 @@
   @keyframes chipFloatC { 0%, 100% { transform: translateY(-50%); } 50% { transform: translateY(calc(-50% - 8px)); } }
 
   /* ---- Kolom kanan: card login compact ---- */
-  .login-side { position: relative; display: flex; align-items: center; justify-content: center; min-width: 0; animation: cardIn .8s cubic-bezier(.22,1,.36,1) both; }
-  @keyframes cardIn { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+  .login-side { position: relative; display: flex; align-items: center; justify-content: center; min-width: 0; animation: cardIn .55s cubic-bezier(.22,1,.36,1) both; }
+  @keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 
   /* Glow lembut di belakang card (bukan garis, hanya cahaya) biar ada kedalaman */
   .login-side::before {
     content: ""; position: absolute; width: 380px; height: 380px; border-radius: 50%;
-    background: radial-gradient(circle, rgba(37,99,235,.13), transparent 62%);
-    filter: blur(10px); pointer-events: none; z-index: 0;
+    background: radial-gradient(circle, rgba(37,99,235,.12), transparent 62%);
+    filter: blur(10px); pointer-events: none; z-index: 0; opacity: .7;
     top: 50%; left: 50%; margin: -190px 0 0 -190px;
-    animation: blobPulse 7s ease-in-out infinite;
   }
-  @keyframes blobPulse { 0%, 100% { opacity: .55; transform: scale(1); } 50% { opacity: .95; transform: scale(1.09); } }
 
   .login-card {
     position: relative; z-index: 1;
@@ -146,28 +147,30 @@
   }
 
   /* Stagger entrance untuk elemen di dalam card */
-  .stg { animation: riseIn .6s cubic-bezier(.22,1,.36,1) both; animation-delay: var(--d, 0s); }
-  @keyframes riseIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+  .stg { animation: riseIn .55s cubic-bezier(.22,1,.36,1) both; animation-delay: var(--d, 0s); }
+  @keyframes riseIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-  .card-head { text-align: center; margin-bottom: 22px; }
-  .ch-logo { height: 54px; width: auto; object-fit: contain; margin: 0 auto 12px; display: block; }
+  .card-head { text-align: center; margin-bottom: 24px; }
+  .ch-logo { height: 46px; width: auto; object-fit: contain; margin: 0 auto 12px; display: block;
+    animation: logoIn .5s cubic-bezier(.22,1,.36,1) .05s both; }
+  @keyframes logoIn { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: scale(1); } }
   .ch-fb {
-    display: none; width: 54px; height: 54px; border-radius: 15px; margin: 0 auto 12px;
+    display: none; width: 46px; height: 46px; border-radius: 13px; margin: 0 auto 12px;
     align-items: center; justify-content: center; color: #fff;
     background: linear-gradient(135deg, #2563EB, #38BDF8);
   }
   .card-head h1 {
     font-size: 23px; font-weight: 800; letter-spacing: -.02em; color: #0F172A;
-    background: linear-gradient(92deg, #1D4ED8 0%, #2563EB 45%, #0EA5E9 70%, #1D4ED8 100%);
-    background-size: 200% auto; -webkit-background-clip: text; background-clip: text;
-    -webkit-text-fill-color: transparent; animation: textShine 8s linear infinite;
+    background: linear-gradient(90deg, #1D4ED8 0%, #2563EB 22%, #3B82F6 40%, #38BDF8 60%, #0EA5E9 78%, #1D4ED8 100%);
+    background-size: 220% auto; -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; animation: textFlow 5.5s linear infinite;
   }
-  @keyframes textShine { to { background-position: 200% center; } }
-  .card-head .ch-sub { font-size: 13px; font-weight: 500; color: #64748B; margin-top: 3px; line-height: 1.5; }
+  @keyframes textFlow { to { background-position: 220% center; } }
+  .card-head .ch-sub { font-size: 13px; font-weight: 500; color: #64748B; margin-top: 6px; line-height: 1.5; }
 
-  .card-head .ch-welcome { margin-top: 20px; }
+  .card-head .ch-welcome { margin-top: 26px; }
   .card-head .ch-welcome h2 { font-size: 22px; font-weight: 700; color: #0F172A; }
-  .card-head .ch-welcome p { font-size: 13px; color: #64748B; margin-top: 4px; line-height: 1.55; }
+  .card-head .ch-welcome p { font-size: 13px; color: #64748B; margin-top: 6px; line-height: 1.55; }
 
   .alert-error {
     display: flex; align-items: flex-start; gap: 9px; margin-bottom: 18px; padding: 12px 14px;
@@ -182,17 +185,17 @@
   .input-group { display: flex; height: 48px; }
   .input-icon {
     display: inline-flex; justify-content: center; align-items: center; width: 48px; flex: none;
-    background: #F8FAFC; border: 1.5px solid #E2E8F0; border-right: 0; border-radius: 10px 0 0 10px; color: #94A3B8;
-    transition: color .25s, background .25s, border-color .25s;
+    background: #F8FAFD; border: 1.5px solid #DCE5F2; border-right: 0; border-radius: 10px 0 0 10px; color: #94A3B8;
+    transition: color .2s, background .2s, border-color .2s;
   }
   .input-group:focus-within .input-icon { color: #2563EB; background: #EFF6FF; border-color: #2563EB; }
   .login-input {
-    flex: 1; min-width: 0; background: #fff; border: 1.5px solid #E2E8F0; border-left: 0;
+    flex: 1; min-width: 0; background: #F8FAFD; border: 1.5px solid #DCE5F2; border-left: 0;
     border-radius: 0 10px 10px 0; font-size: 14px; padding: 0 13px; color: #0F172A; font-family: inherit;
-    transition: border-color .25s, box-shadow .25s;
+    transition: border-color .2s, box-shadow .2s, background .2s;
   }
   .login-input::placeholder { color: #94A3B8; }
-  .login-input:focus { outline: none; border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
+  .login-input:focus { outline: none; border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37,99,235,.10); }
   .login-input.pad-r { padding-right: 44px; }
 
   .pwd-wrap { position: relative; flex: 1; display: flex; min-width: 0; }
@@ -209,15 +212,13 @@
   @keyframes fadeIn { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: translateY(0); } }
   .field.invalid .input-icon { color: #EF4444; background: #FEF2F2; border-color: #FCA5A5; }
   .field.invalid .login-input { border-color: #FCA5A5; }
-  @keyframes shakeX { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-5px); } 40% { transform: translateX(5px); } 60% { transform: translateX(-3px); } 80% { transform: translateX(3px); } }
-  .field.invalid { animation: shakeX .4s ease; }
 
   .btn-masuk {
     position: relative; display: flex; align-items: center; justify-content: center; gap: 9px; width: 100%; height: 48px;
     background: linear-gradient(135deg, #1D4ED8 0%, #2563EB 50%, #0EA5E9 100%);
     background-size: 160% auto; background-position: 0% 50%;
-    color: #fff; border: none; border-radius: 10px;
-    font-size: 15px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+    color: #fff; border: none; border-radius: 11px;
+    font-size: 15px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
     font-family: inherit; cursor: pointer; overflow: hidden;
     transition: background-position .35s ease, box-shadow .25s, transform .2s;
   }
@@ -239,7 +240,7 @@
   .btn-masuk.loading .spinner { opacity: 1; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  .login-note { font-size: 12.5px; color: #94A3B8; text-align: center; margin-top: 22px; line-height: 1.7; }
+  .login-note { font-size: 12.5px; color: #94A3B8; text-align: center; margin-top: 20px; line-height: 1.7; }
   .login-note strong { color: #475569; }
 
   /* ===== Footer ===== */

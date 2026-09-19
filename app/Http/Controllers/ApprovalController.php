@@ -6,8 +6,9 @@ use App\Models\AuditLog;
 use App\Models\ChangeRequest;
 use App\Models\Employee;
 use App\Models\Notification;
-use Illuminate\Http\Request;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -24,7 +25,7 @@ class ApprovalController extends Controller
 
         $query = ChangeRequest::with('employee');
 
-        if (!in_array($status, ['all', 'reviewed', 'approved', 'rejected'], true)) {
+        if (! in_array($status, ['all', 'reviewed', 'approved', 'rejected'], true)) {
             $status = 'pending';
         }
         if ($status !== 'all') {
@@ -52,17 +53,20 @@ class ApprovalController extends Controller
     /**
      * Bandingkan data lama vs data baru sebelum diputuskan.
      */
-    public function show(ChangeRequest $approval): View
+    public function show(Request $request, ChangeRequest $approval): View
     {
-        $approval->load('employee');
+        $approval->load('employee.user', 'approver', 'reviewer');
 
-        return view('approvals.show', ['request' => $approval]);
+        $canDecide = $this->decisionDenialReason($request->user(), $approval) === null;
+
+        return view('approvals.show', ['request' => $approval, 'canDecide' => $canDecide]);
     }
 
     public function approve(Request $request, ChangeRequest $approval): RedirectResponse
     {
-        if ($request->user()->role !== 'super_admin') {
-            abort(403, 'Hanya Super Admin yang bisa menyetujui pengajuan.');
+        $denial = $this->decisionDenialReason($request->user(), $approval);
+        if ($denial) {
+            abort(403, $denial);
         }
 
         if ($approval->status !== 'pending') {
@@ -73,6 +77,8 @@ class ApprovalController extends Controller
         if ($conflict) {
             return back()->with('error', 'Tidak dapat menyetujui: '.$conflict);
         }
+
+        $actorLabel = $this->actorLabel($request->user());
 
         try {
             DB::transaction(function () use ($approval, $request) {
@@ -88,7 +94,7 @@ class ApprovalController extends Controller
             action: 'approve',
             module: 'Approval',
             reference: $approval,
-            description: "Super Admin menyetujui pengajuan data {$approval->employee->nama_lengkap} (modul {$approval->module_type}).",
+            description: "{$actorLabel} menyetujui pengajuan data {$approval->employee->nama_lengkap} (modul {$approval->module_type}).",
         );
 
         return redirect()
@@ -98,8 +104,9 @@ class ApprovalController extends Controller
 
     public function reject(Request $request, ChangeRequest $approval): RedirectResponse
     {
-        if ($request->user()->role !== 'super_admin') {
-            abort(403, 'Hanya Super Admin yang bisa menolak pengajuan.');
+        $denial = $this->decisionDenialReason($request->user(), $approval);
+        if ($denial) {
+            abort(403, $denial);
         }
 
         $data = $request->validate([
@@ -118,12 +125,50 @@ class ApprovalController extends Controller
             action: 'reject',
             module: 'Approval',
             reference: $approval,
-            description: "Super Admin menolak pengajuan data {$approval->employee->nama_lengkap} (modul {$approval->module_type}).",
+            description: "{$this->actorLabel($request->user())} menolak pengajuan data {$approval->employee->nama_lengkap} (modul {$approval->module_type}).",
         );
 
         return redirect()
             ->route('approvals.index')
             ->with('success', 'Pengajuan ditolak, alasan sudah dikirim ke pegawai.');
+    }
+
+    /**
+     * Alasan penolakan keputusan approval (null = boleh memutuskan).
+     * Admin boleh memutuskan pengajuan pegawai lain sesuai kewenangan,
+     * TETAPI tidak boleh memproses akun Super Admin maupun pengajuannya sendiri
+     * (pemisahan pembuat data dan approver).
+     */
+    private function decisionDenialReason(User $actor, ChangeRequest $approval): ?string
+    {
+        if ($actor->role === 'super_admin') {
+            return null;
+        }
+
+        if ($actor->role !== 'admin') {
+            return 'Anda tidak memiliki izin untuk memproses pengajuan ini.';
+        }
+
+        $target = $approval->employee?->user;
+
+        if (! $target) {
+            return 'Pengajuan ini tidak terhubung ke akun pengguna.';
+        }
+
+        if ($target->role === 'super_admin') {
+            return 'Admin tidak memiliki izin untuk memproses pengajuan akun Super Admin.';
+        }
+
+        if ($target->id === $actor->id) {
+            return 'Anda tidak dapat memproses pengajuan perubahan data Anda sendiri.';
+        }
+
+        return null;
+    }
+
+    private function actorLabel(User $user): string
+    {
+        return $user->role === 'super_admin' ? 'Super Admin' : 'Admin';
     }
 
     private function uniqueConflicts(ChangeRequest $approval): ?string

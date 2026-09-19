@@ -30,7 +30,16 @@ class EmployeePolicy
 
     public function update(User $user, Employee $employee): bool
     {
-        return $user->role !== 'user';
+        if ($user->role === 'user') {
+            return false;
+        }
+
+        // Admin tidak boleh mengubah data pegawai yang terhubung ke akun Super Admin.
+        if ($user->role === 'admin' && $employee->user?->role === 'super_admin') {
+            return false;
+        }
+
+        return true;
     }
 
     public function delete(User $user, Employee $employee): bool

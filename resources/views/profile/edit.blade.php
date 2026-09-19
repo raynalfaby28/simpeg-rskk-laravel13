@@ -29,117 +29,177 @@
     $kv = fn ($v) => filled($v) ? e($v) : '<span class="ik-dim">Belum diisi</span>';
     $hint = $completeness >= 100 ? 'Data Anda sudah lengkap.'
       : ($completeness >= 50 ? 'Data pribadi dan kepegawaian Anda sudah cukup lengkap.' : 'Lengkapi data Anda agar profil semakin lengkap.');
-    $profileHeroUrl = ($pp = \App\Models\Settings::get('login_photo_path')) && \Illuminate\Support\Facades\Storage::disk('public')->exists($pp)
-      ? \Illuminate\Support\Facades\Storage::url($pp)
-      : asset('assets/images/login-maskot.png');
+    $hasCover = \Illuminate\Support\Facades\File::exists(public_path('images/rskk-profile-cover.jpg'));
   }
 @endphp
 
 @section('content')
 <style>
-  /* ===== Profil Saya — Hero enterprise Gedung RSKK (Gelombang 10) ===== */
+  /* ===== Profil Saya — FINAL PATCH UI: hero enterprise Gedung RSKK (layered photo, zoom-out) ===== */
+  .profile-page{ max-width:1400px; width:100%; margin:0 auto; }
   .prof-actions{ display:flex; align-items:center; flex-wrap:wrap; gap:12px; }
-  .hero-card{ border-radius:22px; overflow:hidden; border-color:var(--line-soft); box-shadow:var(--shadow-md); }
-  .hero-media{ position:relative; height:300px; overflow:hidden;
-               background:linear-gradient(115deg, var(--navy-800) 0%, var(--blue-700) 55%, var(--blue-600) 100%); }
-  .hero-media .hero-img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center 30%;
-                         -webkit-mask-image:linear-gradient(180deg,#000 48%, rgba(0,0,0,.3) 75%, transparent 100%);
-                         mask-image:linear-gradient(180deg,#000 48%, rgba(0,0,0,.3) 75%, transparent 100%); }
-  .hero-shade{ position:absolute; inset:0; pointer-events:none;
-               background:linear-gradient(180deg, rgba(9,14,32,.36) 0%, rgba(9,14,32,.16) 45%, rgba(9,14,32,0) 74%); }
-  .hero-top{ position:absolute; left:0; right:0; top:0; padding:28px 40px 0; display:flex; align-items:center;
-             justify-content:space-between; gap:12px; pointer-events:none; }
-  .hero-pill{ display:inline-flex; align-items:center; gap:8px; padding:7px 15px; border-radius:999px;
-              font-size:10.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:#fff;
-              background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.30);
-              backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); box-shadow:0 4px 14px rgba(9,14,32,.22); }
-  .hero-pill svg{ width:13px; height:13px; }
-  .hero-nip{ font-size:11px; font-weight:500; letter-spacing:.04em;
-             font-family:ui-monospace, SFMono-Regular, Menlo, monospace; color:rgba(255,255,255,.78);
-             background:rgba(9,14,32,.24); padding:5px 12px; border-radius:999px; border:1px solid rgba(255,255,255,.16); }
-  .hero-content{ position:relative; z-index:2; display:flex; align-items:flex-end; gap:28px; padding:0 40px 34px; margin-top:-74px; }
-  .hero-state{ flex:1 1 auto; min-width:0; }
-  .hero-name{ font-family:var(--font-head); font-size:26px; font-weight:700; letter-spacing:-.015em;
-              color:var(--navy-900); line-height:1.2; }
-  .hero-badges{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
-  .hero-badges .badge{ transition:transform .18s ease, border-color .18s ease, box-shadow .18s ease; }
-  .hero-badges .badge:hover{ transform:scale(1.02); }
-  .hero-line{ display:flex; align-items:center; gap:8px; font-size:14px; font-weight:600; color:var(--ink-800); margin-top:9px; }
-  .hero-line svg{ width:15px; height:15px; flex:none; color:var(--blue-600); }
-  .hero-line.sub{ font-size:13px; font-weight:500; color:var(--ink-500); }
-  .hero-line.sub svg{ width:14px; height:14px; color:var(--ink-300); }
-  .hero-comp{ max-width:520px; margin-top:22px; }
-  .hero-comp-top{ display:flex; align-items:center; justify-content:space-between; gap:12px;
-                  font-size:11.5px; margin-bottom:7px; }
-  .hero-comp-top .lbl{ color:var(--ink-500); font-weight:600; }
-  .hero-comp-top .val{ font-weight:700; color:var(--navy-900); font-variant-numeric:tabular-nums; }
-  .hero-progress{ height:11px; border-radius:999px; background:var(--line-soft); overflow:hidden; position:relative; }
-  .hero-progress .hpg{ height:100%; border-radius:999px; width:var(--val);
-                       background:linear-gradient(90deg, var(--blue-600), #38BDF8); }
-  .hero-progress .hpg::after{ content:''; position:absolute; inset:0; border-radius:999px;
-    background:linear-gradient(90deg, transparent, rgba(255,255,255,.5), transparent);
-    animation:barSweep 2.6s ease-in-out infinite; }
-  .hero-hint{ font-size:11.5px; color:var(--ink-400); margin-top:7px; }
-  .hero-summary{ flex:0 0 352px; min-width:0; background:#fff; border:1px solid var(--line-soft);
-                 border-radius:20px; padding:22px 24px; box-shadow:var(--shadow-md); }
-  .sum-head{ display:flex; align-items:center; gap:10px; padding-bottom:14px; margin-bottom:4px;
+  .profile-page .prof-actions .btn{ min-height:42px; transition:transform .2s cubic-bezier(.22,1,.36,1), box-shadow .2s ease; }
+  .profile-page .prof-actions .btn:hover{ transform:translateY(-1px); }
+
+  /* ---- Hero card ---- */
+  .profile-hero{ position:relative; border-radius:24px; overflow:hidden;
+    border:1px solid var(--line-soft); box-shadow:var(--shadow-md); background:#fff; margin-bottom:16px; }
+
+  /* ---- Cover RSKK (layered image, bukan cover tunggal) — dirampingkan agar foto tidak mendominasi ---- */
+  .profile-cover{ position:relative; height:200px; overflow:hidden;
+    background:linear-gradient(135deg,#0F2F68 0%,#1E50C4 42%,#2563EB 66%,#0EA5E9 100%); }
+  /* Layer 1 — filler kabur: foto yang sama, sedikit diperbesar + blur ringan → mengisi sisi yang terbuka karena zoom-out */
+  .profile-cover-bg{ position:absolute; inset:-34px; background-size:cover; background-position:center 20%;
+    filter:blur(26px) saturate(1.08) brightness(.94); transform:scale(1.06); z-index:0; pointer-events:none; }
+  /* Layer 2 — foto RSKK utama: cover + scale(.90) → gedung terasa lebih jauh, proporsi terjaga, tanpa rusak */
+  .profile-cover-image{ position:absolute; inset:0; width:100%; height:100%;
+    object-fit:cover; object-position:center 20%; transform:scale(.90); z-index:1; transform-origin:center;
+    will-change:transform,opacity; }
+  /* Overlay — gradasi biru tipis agar tulisan terbaca, memudar ke putih di bawah (tanpa gelombang berlebihan) */
+  .profile-cover-overlay{ position:absolute; inset:0; z-index:2; pointer-events:none;
+    background:linear-gradient(180deg, rgba(15,55,120,.08) 0%, rgba(30,90,200,.10) 55%, rgba(255,255,255,.86) 100%); }
+  .profile-cover-top{ position:absolute; left:0; right:0; top:0; z-index:4; padding:20px 36px 0;
+    display:flex; align-items:center; justify-content:flex-end; gap:12px; pointer-events:none; }
+  .profile-cover-id{ margin-left:auto; font-size:11px; font-weight:600; letter-spacing:.06em;
+    font-family:ui-monospace, SFMono-Regular, Menlo, monospace; color:rgba(255,255,255,.88);
+    background:rgba(9,14,32,.40); padding:6px 13px; border-radius:999px;
+    border:1px solid rgba(255,255,255,.20);
+    backdrop-filter:blur(10px) saturate(180%); -webkit-backdrop-filter:blur(10px) saturate(180%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.16), 0 4px 14px rgba(9,14,32,.18); }
+
+  /* Kontrol kamera/hapus pada avatar (modul 36–42px) */
+  .profile-page .profile-avatar-wrap{ position:relative; flex:none; }
+  .profile-page .profile-avatar-wrap .avatar-edit, .profile-page .profile-avatar-wrap .avatar-delete{ width:38px; height:38px;
+    border-width:3px; box-shadow:0 8px 18px rgba(16,24,40,.24); right:-6px; bottom:-6px; }
+  .profile-page .profile-avatar-wrap .avatar-delete{ left:-6px; }
+  .profile-page .profile-avatar-wrap .avatar-edit svg, .profile-page .profile-avatar-wrap .avatar-delete svg{ width:15px; height:15px; }
+
+  /* ---- Area putih: avatar + identitas (padding-right mencegah summary menutupi profil) ---- */
+  .profile-main{ position:relative; z-index:3; display:flex; align-items:flex-start; gap:24px;
+    min-height:250px; padding:14px 344px 26px 36px; background:#fff; }
+  .profile-page .profile-avatar{ width:158px; height:158px; border-radius:50%; overflow:hidden; flex:none;
+    position:relative; margin-top:-50px; background:var(--blue-600);
+    border:5px solid #fff; box-shadow:0 15px 35px rgba(15,35,70,.20); }
+  .profile-page .profile-avatar img{ width:100%; height:100%; object-fit:cover; display:block;
+    transition:transform .3s cubic-bezier(.22,1,.36,1); }
+  .profile-page .profile-avatar:hover img{ transform:scale(1.035); }
+  .profile-page .profile-avatar .pa-inits{ position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+    color:#fff; font-family:var(--font-head); font-weight:700; font-size:54px; }
+  .profile-identity{ flex:1 1 auto; min-width:0; padding-top:8px; }
+  .profile-name{ margin:0; font-family:var(--font-head); font-size:28px; font-weight:750; letter-spacing:-.015em;
+    color:var(--navy-900); line-height:1.2; }
+  .profile-badges{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  .profile-page .profile-badges .badge{ height:28px; padding:0 13px; border-radius:999px;
+    display:inline-flex; align-items:center; gap:7px; font-size:11.5px; font-weight:600;
+    transition:transform .18s ease, border-color .18s ease, box-shadow .18s ease; }
+  .profile-page .profile-badges .badge:hover{ transform:scale(1.02); }
+  .profile-page .profile-badges .badge .dot{ width:7px; height:7px; border-radius:50%; flex:none; display:block; }
+  .profile-page .profile-badges .badge.status-aktif{ height:28px; padding:0 14px; gap:8px;
+    background:#059669; color:#fff; border-color:#059669;
+    box-shadow:0 3px 8px -3px rgba(5,150,105,.5); }
+  .profile-page .profile-badges .badge.status-aktif .dot{ width:7px; height:7px; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,.35); }
+  .profile-page .profile-badges .badge.status-role{ height:28px; padding:0 14px; gap:6px; font-weight:600; }
+  .profile-jabatan{ display:flex; align-items:center; gap:8px; font-size:15px; font-weight:600; color:var(--ink-800); margin-top:11px; }
+  .profile-jabatan svg{ width:15px; height:15px; flex:none; color:var(--blue-600); }
+  .profile-unit{ display:flex; align-items:center; gap:8px; font-size:13.5px; font-weight:500; color:var(--ink-500); margin-top:5px; }
+  .profile-unit svg{ width:14px; height:14px; flex:none; color:var(--ink-300); }
+  .profile-completion{ max-width:560px; margin-top:19px; }
+  .profile-comp-top{ display:flex; align-items:center; justify-content:space-between; gap:12px;
+    font-size:12px; margin-bottom:8px; }
+  .profile-comp-top .lbl{ color:var(--ink-500); font-weight:600; }
+  .profile-comp-top .val{ font-weight:700; color:var(--navy-900); font-variant-numeric:tabular-nums; }
+  .profile-progress{ height:10px; border-radius:999px; background:#E8EEF7; overflow:hidden; position:relative;
+    box-shadow:inset 0 1px 2px rgba(16,24,40,.10); }
+  .profile-progress .pp-fill{ height:100%; border-radius:999px; width:var(--val);
+    background-image:linear-gradient(180deg, rgba(255,255,255,.35), rgba(255,255,255,0) 48%),
+                     linear-gradient(90deg, var(--blue-600), #38BDF8);
+    box-shadow:0 2px 6px -2px rgba(37,99,235,.55); }
+  .profile-hint{ font-size:12px; color:var(--ink-400); margin-top:8px; }
+
+  /* ---- Summary floating (secondary panel, dimulai dari area foto) ---- */
+  .profile-summary{ position:absolute; right:24px; top:66px; width:310px; max-height:360px; overflow-y:auto; z-index:5;
+    background:rgba(255,255,255,.98); border:1px solid #E4EAF2; border-radius:18px;
+    padding:20px 22px; box-shadow:0 12px 30px rgba(15,35,70,.10); }
+  .sum-head{ display:flex; align-items:center; gap:10px; padding-bottom:13px; margin-bottom:2px;
              border-bottom:1px solid var(--line-soft); }
-  .sum-head .ic{ width:34px; height:34px; border-radius:10px; display:flex; align-items:center;
+  .sum-head .ic{ width:38px; height:38px; border-radius:11px; display:flex; align-items:center;
                  justify-content:center; flex:none; background:linear-gradient(135deg,var(--blue-600),var(--blue-500));
                  color:#fff; box-shadow:0 5px 12px -5px rgba(37,99,235,.5); }
-  .sum-head .ic svg{ width:17px; height:17px; }
-  .sum-head .tt{ font-family:var(--font-head); font-size:14px; font-weight:700; color:var(--ink-900); }
-  .sum-head .st{ font-size:11px; color:var(--ink-300); margin-top:1px; }
-  .sum-row{ display:flex; align-items:flex-start; gap:12px; padding:13px 2px; }
-  .sum-row .ic{ width:30px; height:30px; flex:none; display:flex; align-items:center; justify-content:center;
-                border-radius:9px; background:var(--blue-50); color:var(--blue-600); margin-top:1px; }
-  .sum-row .ic svg{ width:14px; height:14px; }
+  .sum-head .ic svg{ width:18px; height:18px; }
+  .sum-head .tt{ font-family:var(--font-head); font-size:15px; font-weight:700; color:var(--ink-900); }
+  .sum-head .st{ font-size:11.5px; color:var(--ink-300); margin-top:2px; }
+  .sum-row{ display:flex; align-items:flex-start; gap:13px; padding:12px 2px; }
+  .sum-row .ic{ width:38px; height:38px; flex:none; display:flex; align-items:center; justify-content:center;
+                border-radius:11px; background:var(--blue-50); color:var(--blue-600); margin-top:1px; }
+  .sum-row .ic svg{ width:18px; height:18px; }
   .sum-row .tx{ min-width:0; }
-  .sum-row .lbl{ font-size:10.5px; color:var(--ink-300); letter-spacing:.03em; }
-  .sum-row .val{ font-size:13px; font-weight:700; color:var(--ink-900); line-height:1.45; margin-top:1px; word-break:break-word; }
+  .sum-row .lbl{ font-size:11px; color:var(--ink-300); letter-spacing:.03em; }
+  .sum-row .val{ font-size:14px; font-weight:700; color:var(--ink-900); line-height:1.45; margin-top:2px; word-break:break-word; }
   .sum-sep{ height:1px; background:var(--line-soft); margin:0 2px; }
-  .pc-avatar{ width:144px; height:144px; border-radius:50%; overflow:hidden; flex:none; position:relative;
-              background:var(--blue-600); border:4px solid #fff; box-shadow:0 12px 28px rgba(16,24,40,.22); }
-  .pc-avatar img{ width:100%; height:100%; object-fit:cover; display:block; }
-  .pc-avatar .pa-inits{ position:absolute; inset:0; display:none; align-items:center; justify-content:center;
-    color:#fff; font-family:var(--font-head); font-weight:700; font-size:46px; }
+  .profile-summary::-webkit-scrollbar{ width:8px; }
+  .profile-summary::-webkit-scrollbar-thumb{ background:#C7D4E6; border-radius:999px; border:2px solid #fff; }
+  .profile-summary::-webkit-scrollbar-thumb:hover{ background:#A9BBD6; }
+  .profile-page .profile-avatar-wrap .avatar-edit:focus-visible,
+  .profile-page .profile-avatar-wrap .avatar-delete:focus-visible,
+  .profile-page .tab-more:focus-visible{ outline:3px solid rgba(37,99,235,.45); outline-offset:2px; }
 
-  @keyframes heroIn{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:translateY(0); } }
-  @keyframes heroLiftIn{ from{ opacity:0; transform:translateY(14px); } to{ opacity:1; transform:translateY(0); } }
-  @keyframes heroFromRight{ from{ opacity:0; transform:translateX(14px); } to{ opacity:1; transform:translateX(0); } }
-  @keyframes hpgrow{ from{ width:0%; } }
+  /* ---- Tabs langsung di bawah hero ---- */
+  .profile-page .profile-tabs{ margin-top:16px; }
+
+  /* ---- Animasi premium (gated prefers-reduced-motion) ---- */
+  @keyframes ppPage{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:translateY(0); } }
+  @keyframes ppCover{ from{ opacity:0; transform:scale(1.015); } to{ opacity:1; transform:scale(1); } }
+  @keyframes ppImg{ from{ opacity:0; transform:scale(1.04); } to{ opacity:1; transform:scale(.90); } }
+  @keyframes ppMain{ from{ opacity:0; transform:translateX(-5px); } to{ opacity:1; transform:translateX(0); } }
+  @keyframes ppSum{ from{ opacity:0; transform:translateY(-6px); } to{ opacity:1; transform:translateY(0); } }
+  @keyframes ppAv{ from{ transform:scale(.97); } to{ transform:scale(1); } }
+  @keyframes ppGrow{ from{ width:0%; } }
   @media (prefers-reduced-motion:no-preference){
-    .hero-card{ animation:heroIn .6s cubic-bezier(.22,1,.36,1) backwards; }
-    .hero-state{ animation:heroLiftIn .5s cubic-bezier(.22,1,.36,1) .12s backwards; }
-    .hero-summary{ animation:heroFromRight .55s cubic-bezier(.22,1,.36,1) .22s backwards; }
-    .hero-progress .hpg{ animation:hpgrow 1.05s cubic-bezier(.22,1,.36,1) .4s backwards; }
-    .profile-avatar-wrap .pc-avatar, .profile-avatar-wrap .avatar-edit, .profile-avatar-wrap .avatar-delete{ transition:transform .2s cubic-bezier(.22,1,.36,1), box-shadow .2s ease; }
-    .profile-avatar-wrap:hover .pc-avatar{ transform:scale(1.02); }
+    .profile-wrap{ animation:ppPage .45s cubic-bezier(.22,1,.36,1) backwards; }
+    .profile-hero{ animation:ppCover .55s cubic-bezier(.22,1,.36,1) .06s backwards; }
+    .profile-cover-image{ animation:ppImg 900ms cubic-bezier(.22,1,.36,1) .1s backwards; }
+    .profile-main{ animation:ppMain .5s cubic-bezier(.22,1,.36,1) .14s backwards; }
+    .profile-page .profile-avatar{ animation:ppAv .5s cubic-bezier(.22,1,.36,1) .2s backwards; }
+    .profile-summary{ animation:ppSum .55s cubic-bezier(.22,1,.36,1) .2s backwards;
+      transition:transform .2s ease, box-shadow .2s ease; }
+    .profile-summary:hover{ transform:translateY(-2px); box-shadow:0 16px 38px rgba(15,35,70,.14); }
+    .profile-progress .pp-fill{ animation:ppGrow .85s cubic-bezier(.22,1,.36,1) .45s backwards; }
   }
   @media (prefers-reduced-motion:reduce){
-    .hero-card, .hero-state, .hero-summary, .hero-progress .hpg{ animation:none !important; }
-    .hero-progress .hpg{ width:var(--val) !important; }
+    .profile-wrap, .profile-hero, .profile-cover-image, .profile-main, .profile-summary,
+    .profile-page .profile-avatar, .profile-progress .pp-fill{ animation:none !important; }
+    .profile-progress .pp-fill{ width:var(--val) !important; }
   }
   @media (min-width:721px) and (max-width:1024px){
-    .hero-media{ height:250px; }
-    .hero-content{ flex-wrap:wrap; }
-    .hero-summary{ flex:1 1 100%; }
+    .profile-page .profile-cover{ height:190px; }
+    .profile-page .profile-main{ flex-wrap:wrap; gap:18px; padding-right:36px; min-height:0; }
+    .profile-page .profile-avatar{ width:132px; height:132px; margin-top:-44px; }
+    .profile-page .profile-summary{ position:static; right:auto; top:auto; width:100%; max-height:none; margin-top:22px; }
   }
   @media (max-width:720px){
-    .hero-media{ height:200px; }
-    .hero-top{ padding:18px 20px 0; }
-    .hero-pill{ padding:6px 12px; font-size:10px; }
-    .hero-nip{ display:none; }
-    .hero-content{ margin-top:-46px; padding:0 20px 24px; gap:18px; }
-    .hero-name{ font-size:20px; }
-    .pc-avatar{ width:98px; height:98px; border-width:3px; }
-    .pc-avatar .pa-inits{ font-size:32px; }
-    .hero-summary{ flex:1 1 100%; border-radius:16px; padding:18px; }
-    .hero-comp{ max-width:100%; }
+    .profile-page .profile-cover{ height:182px; }
+    .profile-page .profile-cover-top{ padding:16px 20px 0; }
+    .profile-page .profile-cover-id{ display:none; }
+    .profile-page .profile-main{ padding:12px 20px 22px; gap:18px; min-height:0; }
+    .profile-page .profile-avatar{ width:120px; height:120px; border-width:4px; margin-top:-36px; }
+    .profile-page .profile-avatar .pa-inits{ font-size:38px; }
+    .profile-page .profile-name{ font-size:21px; }
+    .profile-page .profile-summary{ position:static; right:auto; top:auto; width:100%; max-height:none; margin-top:22px; border-radius:16px; padding:18px; }
+    .profile-page .profile-completion{ max-width:100%; }
   }
-  /* Tabs — refined */
-  .tab-btn{ display:inline-flex; align-items:center; gap:7px; padding:13px 14px 12px; }
-  .tab-btn svg{ width:15px; height:15px; flex:none; opacity:.75; }
+  /* Tabs — refined, tinggi 60–66px (modul) */
+  .tab-bar{ border-bottom:1px solid var(--line); }
+  .tab-btn{ display:inline-flex; align-items:center; gap:8px; padding:21px 20px 20px; font-size:13.5px;
+            position:relative; white-space:nowrap; border-bottom:2px solid transparent;
+            color:var(--ink-600); font-weight:600; transition:color .18s ease; }
+  .tab-btn:hover{ color:var(--blue-600); }
+  .tab-btn.active{ border-bottom-color:transparent; color:var(--ink-900); }
+  .tab-btn::after{ content:''; position:absolute; left:18px; right:18px; bottom:-1px; height:3px; border-radius:3px 3px 0 0;
+                   background:var(--blue-600); transform:scaleX(0); transform-origin:left center; transition:transform .22s cubic-bezier(.22,1,.36,1); }
+  .tab-btn.active::after{ transform:scaleX(1); }
+  .tab-btn svg{ width:16px; height:16px; flex:none; opacity:.7; transition:opacity .18s ease; }
+  .tab-btn:hover svg, .tab-btn.active svg{ opacity:1; }
+  .tab-btn.active .tab-icon-colored{ color:var(--blue-600); }
   /* Tombol "Lainnya" — dropdown di ujung tab bar */
   .tab-more{ display:inline-flex; align-items:center; gap:7px; padding:7px 12px; margin:8px 2px 8px 6px;
              border-radius:10px; font-size:13px; font-weight:600; color:var(--ink-700); background:#fff;
@@ -191,7 +251,7 @@
   .rk-panel-head .tt{ font-family:var(--font-head); font-size:14px; font-weight:700; color:var(--ink-900); }
   .rk-panel-head .st{ font-size:11.5px; color:var(--ink-300); margin-top:0px; }
 </style>
-<div class="profile-wrap">
+<div class="profile-wrap profile-page">
   <div class="page-head no-print mb-6">
     <div>
       <h1 class="page-title">Profil Saya</h1>
@@ -223,22 +283,22 @@
     <a href="{{ route('dashboard') }}" class="btn btn-primary">Kembali ke Dashboard</a>
   </div>
 @else
-  {{-- ===== Profil header — Hero Gedung RSKK ===== --}}
-  <div class="card hero-card mb-6 no-print">
-    <div class="hero-media">
-      <img class="hero-img" src="{{ $profileHeroUrl }}" alt="Ilustrasi Rumah Sakit Kabupaten Klungkung">
-      <div class="hero-shade" aria-hidden="true"></div>
-      <div class="hero-top">
-        <span class="hero-pill">
-          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-          Profil Saya
-        </span>
-        <span class="hero-nip">ID PEGAWAI · {{ $emp->nip ?? '—' }}</span>
+  {{-- ===== Profil header — Hero Gedung RSKK (layered photo) ===== --}}
+  <div class="card profile-hero no-print">
+    <div class="profile-cover">
+      @if($hasCover)
+        {{-- Replace public/images/rskk-profile-cover.jpg with the official RSKK building photo. --}}
+        <span class="profile-cover-bg" style="background-image:url('{{ asset('images/rskk-profile-cover.jpg') }}')" aria-hidden="true"></span>
+        <img class="profile-cover-image" src="{{ asset('images/rskk-profile-cover.jpg') }}" alt="Gedung RSKK" loading="eager" decoding="async">
+      @endif
+      <div class="profile-cover-overlay" aria-hidden="true"></div>
+      <div class="profile-cover-top">
+        <span class="profile-cover-id">ID PEGAWAI · {{ $emp->nip ?? '—' }}</span>
       </div>
     </div>
-    <div class="hero-content">
+    <div class="profile-main">
       <div class="profile-avatar-wrap">
-        <div class="pc-avatar {{ $emp->foto_path ? 'image-present' : '' }}">
+        <div class="profile-avatar {{ $emp->foto_path ? 'image-present' : '' }}">
           @if($emp->foto_path)
             <img src="{{ asset('storage/' . $emp->foto_path) }}" class="avatar-zoom" onclick="openPhotoViewer('{{ asset('storage/' . $emp->foto_path) }}')" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt="{{ $fullName ?: auth()->user()->name }}" title="Perbesar foto">
           @else
@@ -259,31 +319,35 @@
           </form>
         @endif
       </div>
-      <div class="hero-state">
-        <h1 class="hero-name">{{ $fullName ?: auth()->user()->name }}</h1>
-        <div class="hero-badges">
-          <span class="badge" style="background:var(--green-50);color:var(--green-600);border-color:var(--green-100)">
-            <span class="dot" style="background:var(--green-500)"></span>Aktif
+      <div class="profile-identity">
+        <h2 class="profile-name">{{ $fullName ?: auth()->user()->name }}</h2>
+        <div class="profile-badges">
+          <span class="badge status-aktif">
+            <span class="dot"></span>Aktif
           </span>
-          <span class="badge" style="background:var(--blue-50);color:var(--blue-600);border-color:var(--blue-100)">{{ $roleLabel }}</span>
+          <span class="badge status-role" style="background:var(--blue-50);color:var(--blue-600);border-color:var(--blue-100)">{{ $roleLabel }}</span>
         </div>
-        <div class="hero-line">{{ $jabatan ?? '—' }}</div>
-        <div class="hero-line sub">
+        <div class="profile-jabatan">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M21 13.3A9 9 0 0110.7 3 7 7 0 0021 13.3z"/></svg>
+          {{ $jabatan ?? '—' }}
+        </div>
+        <div class="profile-unit">
           <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5"/></svg>
           {{ $unitName ?? '—' }}
         </div>
-        <div class="hero-comp no-print">
-          <div class="hero-comp-top">
+        <div class="profile-completion no-print">
+          <div class="profile-comp-top">
             <span class="lbl">Kelengkapan Data Profil</span>
             <span class="val">{{ $completeness }}%</span>
           </div>
-          <div class="hero-progress" role="progressbar" aria-label="Kelengkapan data profil" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $completeness }}">
-            <div class="hpg" style="--val:{{ $completeness }}%"></div>
+          <div class="profile-progress" role="progressbar" aria-label="Kelengkapan data profil" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $completeness }}">
+            <div class="pp-fill" style="--val:{{ $completeness }}%"></div>
           </div>
-          <div class="hero-hint">{{ $hint }}</div>
+          <div class="profile-hint">{{ $hint }}</div>
         </div>
       </div>
-      <aside class="hero-summary no-print" aria-label="Ringkasan identitas pegawai">
+    </div>
+  <aside class="profile-summary no-print" aria-label="Ringkasan identitas pegawai">
         <div class="sum-head">
           <span class="ic">
             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l8 3v5c0 4.6-3.2 8.7-8 10-4.8-1.3-8-5.4-8-10V6l8-3zm-3 9l2 2 4-4"/></svg>
@@ -301,7 +365,6 @@
         <div class="sum-sep"></div>
         <div class="sum-row" style="padding-bottom:2px"><span class="ic"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></span><div class="tx"><div class="lbl">Masa Kerja</div><div class="val">{{ $masaKerja ?? '—' }}</div></div></div>
       </aside>
-    </div>
   </div>
 
   {{-- Form upload foto tersembunyi --}}
@@ -327,7 +390,7 @@
   @endif
 
   {{-- ===== Tabs profiler ===== --}}
-  <div class="card mb-6">
+  <div class="card profile-tabs mb-6">
 <div class="flex items-center px-2 border-b" style="border-color:var(--line)">
   <div class="flex items-center overflow-x-auto">
     {{-- Ringkasan --}}

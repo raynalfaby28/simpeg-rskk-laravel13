@@ -2,13 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AwardType;
 use App\Models\AssetType;
+use App\Models\AuditLog;
+use App\Models\AwardType;
 use App\Models\DiklatType;
 use App\Models\DocumentType;
 use App\Models\EducationLevel;
 use App\Models\EducationType;
 use App\Models\Employee;
+use App\Models\EmployeeAsset;
 use App\Models\EmployeeCategory;
 use App\Models\EmployeeType;
 use App\Models\EmploymentStatus;
@@ -83,7 +85,14 @@ class MasterDataController extends Controller
             $data['is_active'] = $request->boolean('is_active');
         }
 
-        $conf['model']::create($data);
+        $row = $conf['model']::create($data);
+
+        AuditLog::record(
+            action: 'create',
+            module: 'Master Data',
+            reference: $row,
+            description: "{$this->actorLabel()} menambah master {$conf['label']}: {$this->masterLabel($row)}.",
+        );
 
         return redirect()
             ->route('master.index', $type)
@@ -122,6 +131,13 @@ class MasterDataController extends Controller
 
         $row->update($data);
 
+        AuditLog::record(
+            action: 'update',
+            module: 'Master Data',
+            reference: $row,
+            description: "{$this->actorLabel()} memperbarui master {$conf['label']}: {$this->masterLabel($row)}.",
+        );
+
         return redirect()
             ->route('master.index', $type)
             ->with('success', "Master {$conf['label']} berhasil diperbarui.");
@@ -136,11 +152,35 @@ class MasterDataController extends Controller
             return back()->with('error', "Master ini masih dipakai {$usage} data, tidak bisa dihapus.");
         }
 
+        AuditLog::record(
+            action: 'delete',
+            module: 'Master Data',
+            reference: $row,
+            description: "{$this->actorLabel()} menghapus master {$conf['label']}: {$this->masterLabel($row)}.",
+        );
+
         $row->delete();
 
         return redirect()
             ->route('master.index', $type)
             ->with('success', "Master {$conf['label']} berhasil dihapus.");
+    }
+
+    private function actorLabel(): string
+    {
+        return auth()->user()?->role === 'super_admin' ? 'Super Admin' : 'Admin';
+    }
+
+    private function masterLabel($row): string
+    {
+        foreach (['name', 'label', 'code', 'nama', 'golongan'] as $attr) {
+            $val = $row->getAttribute($attr);
+            if (filled($val)) {
+                return (string) $val;
+            }
+        }
+
+        return '#'.$row->getKey();
     }
 
     private function types(): array
@@ -419,7 +459,7 @@ class MasterDataController extends Controller
             'kategori' => Employee::where('employee_category_id', $row->id)->count(),
             'pendidikan' => Employee::where('pendidikan_awal_id', $row->id)->orWhere('pendidikan_akhir_id', $row->id)->count(),
             'status' => Employee::where('employment_status_id', $row->id)->count(),
-            'aset' => \App\Models\EmployeeAsset::where('asset_type_id', $row->id)->count(),
+            'aset' => EmployeeAsset::where('asset_type_id', $row->id)->count(),
             default => 0,
         };
     }

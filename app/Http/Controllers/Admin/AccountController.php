@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
+use App\Models\Employee;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -27,7 +29,7 @@ class AccountController extends Controller
         if ($search = $request->get('q')) {
             $query->where(function ($q) use ($search) {
                 $q->where('nip', 'like', "%{$search}%")
-                  ->orWhere('name', 'like', "%{$search}%");
+                    ->orWhere('name', 'like', "%{$search}%");
             });
         }
 
@@ -45,6 +47,18 @@ class AccountController extends Controller
     {
         $actor = $request->user();
 
+        // Admin tidak boleh membuat akun Super Admin — ditolak di backend walau
+        // request dimanipulasi atau field role tidak ada di form.
+        if ($actor->role !== 'super_admin' && $request->input('role') === 'super_admin') {
+            AuditLog::record(
+                action: 'role.change_attempt_denied',
+                module: 'Akun',
+                reference: $actor,
+                description: 'Percobaan membuat akun role Super Admin ditolak.',
+            );
+            abort(403, 'Admin tidak memiliki izin untuk menetapkan role Super Admin.');
+        }
+
         $allowedRoles = $actor->role === 'super_admin'
             ? ['super_admin', 'admin', 'user']
             : ['user']; // Admin cuma boleh buat akun User
@@ -53,7 +67,7 @@ class AccountController extends Controller
             'nip' => ['required', 'string', 'unique:users,nip'],
             'name' => ['required', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'unique:users,email'],
-            'role' => ['required', 'in:' . implode(',', $allowedRoles)],
+            'role' => ['required', 'in:'.implode(',', $allowedRoles)],
             'password' => ['required', 'string', 'min:8'],
         ]);
 
@@ -70,12 +84,19 @@ class AccountController extends Controller
         // Sesuai alur: begitu akun pegawai dibuat, langsung siapkan record employees
         // kosong yang nanti dilengkapi sendiri oleh pegawai / Admin.
         if ($user->role === 'user') {
-            \App\Models\Employee::create([
+            Employee::create([
                 'user_id' => $user->id,
                 'nip' => $user->nip,
                 'nama_lengkap' => $user->name,
             ]);
         }
+
+        AuditLog::record(
+            action: 'create',
+            module: 'Akun',
+            reference: $user,
+            description: "{$this->actorLabel($actor)} membuat akun {$user->name} ({$user->nip}) dengan role {$user->role}.",
+        );
 
         return redirect()
             ->route('admin.accounts.index')
@@ -95,6 +116,13 @@ class AccountController extends Controller
 
         $account->update(['is_active' => ! $account->is_active]);
 
+        AuditLog::record(
+            action: 'update',
+            module: 'Akun',
+            reference: $account,
+            description: "{$this->actorLabel($request->user())} ".($account->is_active ? 'mengaktifkan' : 'menonaktifkan')." akun {$account->name} ({$account->nip}).",
+        );
+
         return back()->with('success', $account->is_active ? 'Akun diaktifkan.' : 'Akun dinonaktifkan.');
     }
 
@@ -107,6 +135,13 @@ class AccountController extends Controller
             'password' => Hash::make($newPassword),
             'password_cipher' => Crypt::encryptString($newPassword),
         ]);
+
+        AuditLog::record(
+            action: 'update',
+            module: 'Akun',
+            reference: $account,
+            description: "{$this->actorLabel($request->user())} mereset password akun {$account->name} ({$account->nip}).",
+        );
 
         // Di produksi: kirim password baru lewat WA/email resmi, jangan ditampilkan di layar.
         return back()->with('success', "Password direset menjadi password bawaan: {$newPassword}");
@@ -133,6 +168,12 @@ class AccountController extends Controller
         $actor = $request->user();
 
         if ($actor->role !== 'super_admin') {
+            AuditLog::record(
+                action: 'role.change_attempt_denied',
+                module: 'Akun',
+                reference: $account,
+                description: 'Percobaan mengubah role oleh akun non-Super Admin ditolak.',
+            );
             abort(403, 'Hanya Super Admin yang boleh mengubah role.');
         }
 
@@ -145,6 +186,13 @@ class AccountController extends Controller
         ]);
 
         $account->update(['role' => $data['role']]);
+
+        AuditLog::record(
+            action: 'role.changed',
+            module: 'Akun',
+            reference: $account,
+            description: "{$this->actorLabel($actor)} mengubah role akun {$account->name} ({$account->nip}) menjadi {$data['role']}.",
+        );
 
         return back()->with('success', 'Role akun diperbarui.');
     }
@@ -159,7 +207,19 @@ class AccountController extends Controller
 
         $account->delete();
 
+        AuditLog::record(
+            action: 'delete',
+            module: 'Akun',
+            reference: $account,
+            description: "{$this->actorLabel($request->user())} menghapus akun {$account->name} ({$account->nip}).",
+        );
+
         return back()->with('success', 'Akun dihapus.');
+    }
+
+    private function actorLabel(User $user): string
+    {
+        return $user->role === 'super_admin' ? 'Super Admin' : 'Admin';
     }
 
     private function guardAgainstTouchingSuperAdmin(Request $request, User $account): void

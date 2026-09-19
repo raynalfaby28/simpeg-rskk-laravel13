@@ -1295,7 +1295,7 @@
           'create' => ['Tambah', 'var(--green-600)', 'var(--green-50)', 'var(--green-100)'],
           'update' => ['Ubah', 'var(--blue-600)', 'var(--blue-50)', 'var(--blue-100)'],
           'delete' => ['Hapus', 'var(--red-600)', 'var(--red-50)', 'var(--red-100)'],
-          'approve' => ['Disetujui SA', 'var(--green-600)', 'var(--green-50)', 'var(--green-100)'],
+          'approve' => ['Disetujui', 'var(--green-600)', 'var(--green-50)', 'var(--green-100)'],
           'reject' => ['Ditolak', 'var(--red-600)', 'var(--red-50)', 'var(--red-100)'],
           'login' => ['Login', 'var(--ink-500)', 'var(--ink-50)', 'var(--line)'],
         ];
@@ -1341,26 +1341,48 @@
                 'rejected' => ['bg' => 'var(--red-50)', 'fg' => 'var(--red-600)', 'bd' => 'var(--red-100)', 'txt' => 'Ditolak'],
                 default => ['bg' => 'var(--amber-50)', 'fg' => 'var(--amber-600)', 'bd' => 'var(--amber-100)', 'txt' => 'Menunggu'],
               };
+              $crActor = $cr->approver ?? $cr->reviewer;
+              $crWhen = $cr->approved_at ?? $cr->reviewed_at ?? $cr->created_at;
+              $crModule = ucwords(str_replace('_', ' ', $cr->module_type));
+              $crOld = is_array($cr->old_data) ? $cr->old_data : [];
+              $crNew = is_array($cr->new_data) ? $cr->new_data : [];
+              $crChanged = collect($crNew)->filter(fn ($v, $k) => (string) ($crOld[$k] ?? '') !== (string) ($v ?? ''));
             @endphp
             <div class="p-4 rounded-xl card-hover" style="border:1px solid var(--line-soft)">
               <div class="flex items-start justify-between gap-3">
                 <div class="min-w-0">
-                  <div class="text-[13.5px] font-semibold">Pengajuan {{ str_replace('_', ' ', $cr->module_type) }} · {{ $cr->description }}</div>
+                  <div class="text-[13.5px] font-semibold">
+                    @if($cr->status === 'approved') Disetujui
+                    @elseif($cr->status === 'rejected') Ditolak
+                    @else Menunggu Persetujuan
+                    @endif
+                    · Perubahan {{ $crModule }}
+                  </div>
+                  <div class="text-[11.5px] mt-1" style="color:var(--ink-500)">
+                    <b style="color:var(--ink-700)">Target:</b> {{ $employee->nama_lengkap }} ({{ $employee->nip }})
+                  </div>
                   <div class="text-[11.5px] mt-0.5" style="color:var(--ink-500)">
-                    Diajukan {{ optional($cr->created_at)->format('d M Y H:i') }}
-                    @if($cr->reviewed_at) · Ditinjau {{ optional($cr->reviewed_at)->format('d M Y H:i') }} @endif
+                    <b style="color:var(--ink-700)">{{ $cr->status === 'pending' ? 'Diajukan oleh' : 'Diproses oleh' }}:</b>
+                    {{ $crActor?->name ?? ($cr->status === 'pending' ? ($employee->user?->name ?? 'Pegawai') : 'Sistem') }}
+                    · {{ optional($crWhen)->format('d M Y H:i') }}
                   </div>
                 </div>
                 <span class="badge flex-none" style="background:{{ $pill['bg'] }}; color:{{ $pill['fg'] }}; border-color:{{ $pill['bd'] }}">{{ $pill['txt'] }}</span>
               </div>
-              @if($cr->data_new && is_array($cr->data_new))
-                <div class="mt-3 pt-3 text-[11.5px] grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-1" style="border-top:1px solid var(--line-soft)">
-                  @foreach ($cr->data_new as $field => $val)
-                    @if(!empty($val) && $val !== $employee->{$field})
-                      <div><span style="color:var(--ink-300)">{{ str_replace('_', ' ', ucwords($field)) }}</span><br><span style="color:var(--ink-700)">{{ $val }}</span></div>
-                    @endif
+              @if($crChanged->isNotEmpty())
+                <div class="mt-3 pt-3 text-[11.5px] space-y-1" style="border-top:1px solid var(--line-soft)">
+                  @foreach ($crChanged as $field => $val)
+                    <div>
+                      <span style="color:var(--ink-300)">{{ ucwords(str_replace('_', ' ', $field)) }}</span>:
+                      <span style="color:var(--red-600)">{{ filled($crOld[$field] ?? null) ? $crOld[$field] : '—' }}</span>
+                      <span style="color:var(--ink-300)">&rarr;</span>
+                      <span style="color:var(--green-600)">{{ filled($val) ? $val : '—' }}</span>
+                    </div>
                   @endforeach
                 </div>
+              @endif
+              @if($cr->rejection_reason)
+                <div class="mt-2 text-[11.5px]" style="color:var(--red-600)">Alasan: {{ $cr->rejection_reason }}</div>
               @endif
             </div>
           @endforeach

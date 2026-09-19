@@ -2,20 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Employee;
-use App\Models\Position;
-use App\Models\Rank;
-use App\Models\WorkUnit;
+use App\Models\AuditLog;
 use App\Models\EducationLevel;
+use App\Models\Employee;
 use App\Models\EmployeeCategory;
 use App\Models\EmploymentStatus;
-use App\Models\AuditLog;
+use App\Models\Position;
+use App\Models\Rank;
 use App\Models\User;
-use Illuminate\Http\Request;
+use App\Models\WorkUnit;
+use Illuminate\Database\QueryException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class EmployeeController extends Controller
 {
@@ -29,11 +32,11 @@ class EmployeeController extends Controller
         if ($search = $request->get('q')) {
             $query->where(function ($q) use ($search) {
                 $q->where('nama_lengkap', 'like', "%{$search}%")
-                  ->orWhere('nip', 'like', "%{$search}%")
-                  ->orWhere('nip_lama', 'like', "%{$search}%")
-                  ->orWhere('nik', 'like', "%{$search}%")
-                  ->orWhereHas('currentPosition', fn ($p) => $p->where('name', 'like', "%{$search}%"))
-                  ->orWhereHas('workUnit', fn ($u) => $u->where('name', 'like', "%{$search}%"));
+                    ->orWhere('nip', 'like', "%{$search}%")
+                    ->orWhere('nip_lama', 'like', "%{$search}%")
+                    ->orWhere('nik', 'like', "%{$search}%")
+                    ->orWhereHas('currentPosition', fn ($p) => $p->where('name', 'like', "%{$search}%"))
+                    ->orWhereHas('workUnit', fn ($u) => $u->where('name', 'like', "%{$search}%"));
             });
         }
 
@@ -56,7 +59,7 @@ class EmployeeController extends Controller
             } elseif ($filter === 'nonaktif') {
                 $query->where(function ($q) {
                     $q->whereDoesntHave('employmentStatus')
-                      ->orWhereRelation('employmentStatus', 'name', '!=', 'Aktif');
+                        ->orWhereRelation('employmentStatus', 'name', '!=', 'Aktif');
                 });
             } elseif ($filter === 'baru') {
                 $query->where('created_at', '>=', now()->subDays(30));
@@ -82,7 +85,7 @@ class EmployeeController extends Controller
         return view('employees.index', compact('employees', 'totals', 'workUnits', 'positions', 'ranks'));
     }
 
-    public function searchJson(Request $request): \Illuminate\Http\JsonResponse
+    public function searchJson(Request $request): JsonResponse
     {
         $term = trim($request->get('q', ''));
         if (mb_strlen($term) < 2) {
@@ -91,8 +94,8 @@ class EmployeeController extends Controller
         $rows = Employee::with(['currentPosition', 'workUnit'])
             ->where(function ($query) use ($term) {
                 $query->where('nama_lengkap', 'like', "%{$term}%")
-                  ->orWhere('nip', 'like', "%{$term}%")
-                  ->orWhere('nip_lama', 'like', "%{$term}%");
+                    ->orWhere('nip', 'like', "%{$term}%")
+                    ->orWhere('nip_lama', 'like', "%{$term}%");
             })
             ->limit(8)
             ->get(['id', 'nama_lengkap', 'nip'])
@@ -111,14 +114,14 @@ class EmployeeController extends Controller
     /**
      * Ekspor daftar pegawai ke CSV dengan filter yang sama seperti daftar.
      */
-    public function exportCsv(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    public function exportCsv(Request $request): StreamedResponse
     {
         $query = Employee::with(['currentPosition', 'workUnit', 'employmentStatus', 'golonganAkhir']);
 
         if ($search = $request->get('q')) {
             $query->where(function ($q) use ($search) {
                 $q->where('nama_lengkap', 'like', "%{$search}%")
-                  ->orWhere('nip', 'like', "%{$search}%");
+                    ->orWhere('nip', 'like', "%{$search}%");
             });
         }
 
@@ -140,16 +143,16 @@ class EmployeeController extends Controller
             } elseif ($filter === 'nonaktif') {
                 $query->where(function ($q) {
                     $q->whereDoesntHave('employmentStatus')
-                      ->orWhereRelation('employmentStatus', 'name', '!=', 'Aktif');
+                        ->orWhereRelation('employmentStatus', 'name', '!=', 'Aktif');
                 });
             } elseif ($filter === 'baru') {
-                $query->where('created_at', '>=', now()->subDays(30)); 
+                $query->where('created_at', '>=', now()->subDays(30));
             }
         }
 
         $employees = $query->get();
 
-        $filename = 'pegawai-' . now()->format('Ymd-Hi') . '.csv';
+        $filename = 'pegawai-'.now()->format('Ymd-Hi').'.csv';
 
         return response()->streamDownload(function () use ($employees) {
             $handle = fopen('php://output', 'w');
@@ -191,7 +194,7 @@ class EmployeeController extends Controller
             'rankHistories.rank',
             'mutations.unitAsal', 'mutations.unitTujuan',
             'trainings', 'awards', 'disciplines', 'performances', 'families', 'documents',
-            'user', 'changeRequests',
+            'user', 'changeRequests.approver', 'changeRequests.reviewer',
         ]);
 
         $employee->load([
@@ -228,6 +231,8 @@ class EmployeeController extends Controller
 
     public function update(Request $request, Employee $employee)
     {
+        $this->authorize('update', $employee);
+
         $data = $request->validate($this->validationRules());
 
         $data['kepemilikan_kpe'] = $request->boolean('kepemilikan_kpe');
@@ -237,11 +242,16 @@ class EmployeeController extends Controller
 
         $employee->update($data);
 
+        $changedFields = collect($employee->getChanges())
+            ->except(['updated_at', 'data_updated_at'])
+            ->keys()
+            ->implode(', ');
+
         AuditLog::record(
             action: 'update',
             module: 'Pegawai',
             reference: $employee,
-            description: "Admin memperbarui data pegawai {$employee->nama_lengkap} ({$employee->nip}).",
+            description: "Admin memperbarui data pegawai {$employee->nama_lengkap} ({$employee->nip})".($changedFields ? ": {$changedFields}." : '.'),
         );
 
         return redirect()
@@ -275,7 +285,7 @@ class EmployeeController extends Controller
             action: 'create',
             module: 'Pegawai',
             reference: $employee,
-            description: "Admin menyimpan draft pegawai " . ($employee->nama_lengkap ?: '(tanpa nama)') . '.',
+            description: 'Admin menyimpan draft pegawai '.($employee->nama_lengkap ?: '(tanpa nama)').'.',
         );
 
         return redirect()
@@ -320,6 +330,19 @@ class EmployeeController extends Controller
 
         // Role akun: hanya Super Admin yang boleh menentukan Admin/User.
         $requestedRole = $request->input('role');
+
+        // Admin tidak boleh menetapkan role Super Admin — ditolak di backend,
+        // bukan hanya disembunyikan dari form (termasuk request manual/payload).
+        if ($requestedRole === 'super_admin' && ! $request->user()?->isSuperAdmin()) {
+            AuditLog::record(
+                action: 'role.change_attempt_denied',
+                module: 'Akun',
+                reference: $request->user(),
+                description: 'Percobaan menetapkan role Super Admin melalui tambah pegawai ditolak.',
+            );
+            abort(403, 'Admin tidak memiliki izin untuk menetapkan role Super Admin.');
+        }
+
         if ($request->user()?->isSuperAdmin() && in_array($requestedRole, ['admin', 'user'], true)) {
             $role = $requestedRole;
         } else {
@@ -340,7 +363,7 @@ class EmployeeController extends Controller
             ]);
 
             $employee->update(['user_id' => $user->id]);
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (QueryException $e) {
             return back()
                 ->withInput()
                 ->withErrors([
@@ -367,6 +390,8 @@ class EmployeeController extends Controller
      */
     public function updatePhoto(Request $request, Employee $employee): RedirectResponse
     {
+        $this->authorize('update', $employee);
+
         $data = $request->validate([
             'foto' => ['required', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
         ]);
