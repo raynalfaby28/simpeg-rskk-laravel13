@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Masuk — SIMPEG RSKK</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    background: #F5F7FA; color: #101828; -webkit-font-smoothing: antialiased;
+    display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px;
+  }
+  .wrapper { width: 100%; max-width: 400px; }
+  .brand { text-align: center; margin-bottom: 26px; }
+  .logo-wrap {
+    width: 64px; height: 64px; margin: 0 auto 14px; border-radius: 16px; overflow: hidden;
+    display: flex; align-items: center; justify-content: center; background: #EFF6FF;
+    box-shadow: 0 1px 2px rgba(16,24,40,.06);
+  }
+  .logo-wrap img { width: 40px; height: 40px; object-fit: contain; }
+  .brand h1 { font-family: 'Poppins', 'Inter', sans-serif; font-size: 21px; font-weight: 700; letter-spacing: -.01em; color: #0C1F3D; }
+  .brand p { font-size: 13px; color: #475467; margin-top: 4px; }
+  .card {
+    background: #fff; border: 1px solid #E4E7EC; border-radius: 14px;
+    box-shadow: 0 12px 30px -18px rgba(16,24,40,.18); padding: 28px 28px 24px;
+  }
+  .title { font-size: 16px; font-weight: 700; color: #101828; margin-bottom: 4px; }
+  .sub { font-size: 13px; color: #475467; margin-bottom: 20px; }
+  .alert-error {
+    margin-bottom: 16px; font-size: 13px; padding: 10px 13px; border-radius: 9px;
+    background: #FEF3F2; color: #D92D20; border: 1px solid #FECDCA;
+  }
+  .field { margin-bottom: 15px; }
+  .field label { display: block; font-size: 12.5px; font-weight: 600; color: #1F2937; margin-bottom: 6px; }
+  .input-wrap { position: relative; }
+  .input {
+    display: block; width: 100%; padding: 10px 13px; border: 1px solid #D0D5DD; border-radius: 9px;
+    background: #fff; font-size: 14px; font-family: 'Inter', sans-serif; color: #101828;
+    box-shadow: 0 1px 2px rgba(16,24,40,.04); transition: .15s;
+  }
+  .input::placeholder { color: #98A2B3; }
+  .input:focus { outline: none; border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
+  .input.pr { padding-right: 42px; }
+  .toggle-pass {
+    position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+    background: transparent; border: none; cursor: pointer; padding: 6px; color: #98A2B3;
+  }
+  .toggle-pass:hover { color: #2563EB; }
+  .remember-row { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #475467; margin: 2px 0 18px; }
+  .remember-row input { accent-color: #2563EB; width: 15px; height: 15px; }
+  .btn {
+    display: block; width: 100%; padding: 11px 16px; border: none; border-radius: 9px;
+    background: #2563EB; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer;
+    font-family: 'Inter', sans-serif; transition: .15s;
+  }
+  .btn:hover { background: #1D4ED8; }
+  .btn:active { opacity: .95; }
+  .foot { text-align: center; font-size: 12px; color: #98A2B3; margin-top: 22px; line-height: 1.7; }
+  .foot strong { color: #667085; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="brand">
+    <div class="logo-wrap">
+      <img src="http://simpeg-rskk-laravel13.test/assets/images/logo-rskk.png" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt="Logo RSKK">
+      <span style="display:none;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;background:#2563EB;color:#fff;font-weight:700;font-size:22px">R</span>
+    </div>
+    <h1>SIMPEG RSKK</h1>
+    <p>Sistem Informasi Kepegawaian RSUD Kesehatan Kerja</p>
+  </div>
+
+  <div class="card">
+    <div class="title">Masuk ke Sistem</div>
+    <div class="sub">Gunakan NIP dan password akun Anda.</div>
+
+    
+    <form method="POST" action="http://simpeg-rskk-laravel13.test/login">
+      <input type="hidden" name="_token" value="XPYijTrL5pBpeYg84FWBgIMLF8pMR6rZCb8XRXkS" autocomplete="off">      <div class="field">
+        <label for="nip">NIP / Username</label>
+        <input id="nip" type="text" name="nip" value="" required autofocus autocomplete="username" placeholder="Masukkan NIP" class="input">
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <div class="input-wrap">
+          <input id="password" type="password" name="password" required placeholder="Masukkan password" class="input pr">
+          <button type="button" class="toggle-pass" onclick="togglePass()" id="passToggle" aria-label="Tampilkan password">
+            <svg style="width:18px;height:18px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <label class="remember-row">
+        <input type="checkbox" name="remember"> Ingat saya
+      </label>
+
+      <button type="submit" class="btn">Masuk</button>
+    </form>
+  </div>
+
+  <div class="foot">
+    <strong>SIMPEG RSKK</strong> · Sistem Informasi Kepegawaian<br>
+    &copy; 2026 RSUD Kesehatan Kerja
+  </div>
+</div>
+
+<script>
+  function togglePass(){
+    const i = document.getElementById('password');
+    i.type = i.type === 'password' ? 'text' : 'password';
+  }
+</script>
+</body>
+</html>
