@@ -9,6 +9,7 @@ use App\Models\EmployeeCategory;
 use App\Models\EmploymentStatus;
 use App\Models\Notification;
 use App\Models\Position;
+use App\Models\PositionType;
 use App\Models\Rank;
 use App\Models\User;
 use App\Models\WorkUnit;
@@ -67,6 +68,7 @@ class ProfileController extends Controller
                 'ranks' => Rank::orderBy('urutan')->get(['id', 'golongan', 'pangkat']),
                 'employeeCategories' => EmployeeCategory::orderBy('name')->get(['id', 'name']),
                 'employmentStatuses' => EmploymentStatus::orderBy('name')->get(['id', 'name']),
+                'positionTypes' => PositionType::where('is_active', true)->orderBy('name')->get(['code', 'name']),
             ]
         ));
     }
@@ -102,7 +104,7 @@ class ProfileController extends Controller
             'jenis_asn' => ['nullable', 'in:PNS,PPPK'],
             'work_unit_id' => ['nullable', 'integer', 'exists:work_units,id'],
             'current_position_id' => ['nullable', 'integer', 'exists:positions,id'],
-            'jenis_jabatan' => ['nullable', 'in:struktural,fungsional,pelaksana'],
+            'jenis_jabatan' => ['nullable', 'in:'.implode(',', PositionType::pluck('code')->all())],
             'golongan_akhir_id' => ['nullable', 'integer', 'exists:ranks,id'],
             'tmt_jabatan' => ['nullable', 'date'],
             'tmt_skpd' => ['nullable', 'date'],

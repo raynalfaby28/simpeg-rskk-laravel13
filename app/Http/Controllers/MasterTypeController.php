@@ -19,7 +19,9 @@ class MasterTypeController extends Controller
 
     public function create(): View
     {
-        return view('master.types.form');
+        $gapOptions = $this->gapOptions();
+
+        return view('master.types.form', compact('gapOptions'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -27,7 +29,7 @@ class MasterTypeController extends Controller
         $data = $request->validate([
             'label' => ['required', 'string', 'max:100'],
             'description' => ['nullable', 'string', 'max:255'],
-            'sort' => ['nullable', 'integer', 'min:0', 'max:999'],
+            'sort' => ['required', 'integer', 'min:1'],
         ]);
 
         $key = $this->uniqueKey($data['label']);
@@ -36,7 +38,7 @@ class MasterTypeController extends Controller
             'label' => $data['label'],
             'key' => $key,
             'description' => $data['description'] ?? null,
-            'sort' => $data['sort'] ?? 100,
+            'sort' => $this->gap((int) $data['sort']),
             'is_active' => true,
         ]);
 
@@ -47,7 +49,10 @@ class MasterTypeController extends Controller
 
     public function edit(MasterType $masterType): View
     {
-        return view('master.types.form', compact('masterType'));
+        $gapOptions = $this->gapOptions();
+        $currentPosition = $this->gap((int) $masterType->sort);
+
+        return view('master.types.form', compact('masterType', 'gapOptions', 'currentPosition'));
     }
 
     public function update(Request $request, MasterType $masterType): RedirectResponse
@@ -55,13 +60,13 @@ class MasterTypeController extends Controller
         $data = $request->validate([
             'label' => ['required', 'string', 'max:100'],
             'description' => ['nullable', 'string', 'max:255'],
-            'sort' => ['nullable', 'integer', 'min:0', 'max:999'],
+            'sort' => ['required', 'integer', 'min:1'],
         ]);
 
         $masterType->update([
             'label' => $data['label'],
             'description' => $data['description'] ?? null,
-            'sort' => $data['sort'] ?? 100,
+            'sort' => $this->gap((int) $data['sort']),
         ]);
 
         return redirect()
@@ -80,6 +85,24 @@ class MasterTypeController extends Controller
         return redirect()
             ->route('master.types.index')
             ->with('success', "Jenis master data «{$masterType->label}» berhasil dihapus.");
+    }
+
+    private function gap(int $position): int
+    {
+        return max(1, min($position, (new MasterDataController)->maxGap()));
+    }
+
+    private function gapOptions(): array
+    {
+        $labels = (new MasterDataController)->builtInLabels();
+
+        $options = [];
+        foreach ($labels as $i => $label) {
+            $options[$i + 1] = "Sebelum {$label}";
+        }
+        $options[count($labels) + 1] = 'Paling akhir';
+
+        return $options;
     }
 
     private function uniqueKey(string $label): string

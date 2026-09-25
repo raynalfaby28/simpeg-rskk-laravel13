@@ -138,8 +138,17 @@
         <label class="flabel">Status Pegawai</label>
         <select name="status_pegawai" class="input">
           <option value="">Pilih</option>
-          @foreach(['PNS', 'PPPK', 'Honorer', 'Kontrak', 'Lainnya'] as $sp)
+          @foreach(['PNS', 'PPPK', 'Honorer', 'Kontrak', 'BLUD', 'Lainnya'] as $sp)
             <option value="{{ $sp }}" @selected($employee->status_pegawai === $sp)>{{ $sp }}</option>
+          @endforeach
+        </select>
+      </div>
+      <div>
+        <label class="flabel">Jenis BLUD</label>
+        <select name="blud_category_id" class="input" {{ old('status_pegawai', $employee->status_pegawai) === 'BLUD' ? 'required' : '' }}>
+          <option value="">Pilih</option>
+          @foreach ($bludCategories as $bc)
+            <option value="{{ $bc->id }}" @selected(old('blud_category_id', $employee->blud_category_id) == $bc->id)>{{ $bc->name }}</option>
           @endforeach
         </select>
       </div>
@@ -200,26 +209,39 @@
   {{-- ============ JABATAN & ORGANISASI ============ --}}
   <div class="card p-6 mb-5">
     <h3 class="section-title mb-3">JABATAN & ORGANISASI</h3>
+    @php $lockedJabatan = filled($employee->current_position_id); $lockedUnit = filled($employee->work_unit_id); @endphp
+    @if($lockedJabatan || $lockedUnit)
+    <div class="alert alert-info mb-4" style="background:var(--blue-50);border-color:var(--blue-100);color:var(--blue-800)">
+      <svg style="width:16px;height:16px;flex:none;margin-top:1px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+      <span>Jabatan dan Unit Kerja yang sudah terisi <strong>dikunci</strong> di halaman ini. Untuk mengubahnya, gunakan menu <strong>Riwayat Mutasi</strong> pada profil pegawai agar perubahan tetap tercatat.</span>
+    </div>
+    @endif
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div>
         <label class="flabel">Jenis Jabatan</label>
         <select name="jenis_jabatan" class="input">
           <option value="">Pilih</option>
-          @foreach (['struktural','fungsional','pelaksana'] as $jj)
-            <option value="{{ $jj }}" @selected(old('jenis_jabatan', $employee->jenis_jabatan) === $jj)>{{ ucfirst($jj) }}</option>
+          @foreach ($positionTypes as $jj)
+            <option value="{{ $jj->code }}" @selected(old('jenis_jabatan', $employee->jenis_jabatan) === $jj->code)>{{ $jj->name }}</option>
           @endforeach
         </select>
       </div>
       <div>@include('employees._field', ['name' => 'eselon', 'label' => 'Eselon'])</div>
       <div>@include('employees._field', ['name' => 'tmt_eselon', 'label' => 'TMT Eselon', 'type' => 'date'])</div>
       <div>
-        <label class="flabel">Jabatan Saat Ini</label>
-        <select name="current_position_id" class="input">
+        <label class="flabel">Jabatan Saat Ini @if($lockedJabatan)<span class="badge" style="background:var(--amber-50);color:var(--amber-600);border-color:var(--amber-100)">Dikunci</span>@endif</label>
+        <select name="current_position_id" class="input" @disabled($lockedJabatan) @if($lockedJabatan) style="background:#F8FAFC;color:var(--ink-700)" @endif>
           <option value="">Pilih</option>
           @foreach ($positions as $pos)
             <option value="{{ $pos->id }}" @selected(old('current_position_id', $employee->current_position_id) == $pos->id)>{{ $pos->name }}</option>
           @endforeach
         </select>
+        @if($lockedJabatan)
+        <p class="text-[11px] mt-1.5 flex items-center gap-1.5" style="color:var(--amber-600)">
+          <svg style="width:12px;height:12px;flex:none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+          Diubah melalui Riwayat Mutasi.
+        </p>
+        @endif
       </div>
       <div>@include('employees._field', ['name' => 'tmt_jabatan', 'label' => 'TMT Jabatan', 'type' => 'date'])</div>
       <div>@include('employees._field', ['name' => 'tugas_tambahan_1', 'label' => 'Tugas Tambahan 1'])</div>
@@ -227,13 +249,19 @@
       <div>@include('employees._field', ['name' => 'tugas_tambahan_2', 'label' => 'Tugas Tambahan 2'])</div>
       <div>@include('employees._field', ['name' => 'tmt_tugas_tambahan_2', 'label' => 'TMT Tugas Tambahan 2', 'type' => 'date'])</div>
       <div>
-        <label class="flabel">Unit Kerja</label>
-        <select name="work_unit_id" class="input">
+        <label class="flabel">Unit Kerja @if($lockedUnit)<span class="badge" style="background:var(--amber-50);color:var(--amber-600);border-color:var(--amber-100)">Dikunci</span>@endif</label>
+        <select name="work_unit_id" class="input" @disabled($lockedUnit) @if($lockedUnit) style="background:#F8FAFC;color:var(--ink-700)" @endif>
           <option value="">Pilih</option>
           @foreach ($workUnits as $wu)
             <option value="{{ $wu->id }}" @selected(old('work_unit_id', $employee->work_unit_id) == $wu->id)>{{ $wu->name }}</option>
           @endforeach
         </select>
+        @if($lockedUnit)
+        <p class="text-[11px] mt-1.5 flex items-center gap-1.5" style="color:var(--amber-600)">
+          <svg style="width:12px;height:12px;flex:none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+          Diubah melalui Riwayat Mutasi.
+        </p>
+        @endif
       </div>
       <div>@include('employees._field', ['name' => 'tmt_skpd', 'label' => 'TMT Unit Kerja', 'type' => 'date'])</div>
       <div>@include('employees._field', ['name' => 'instansi_dipekerjakan', 'label' => 'Instansi Tempat Diperkerjakan'])</div>
@@ -271,9 +299,9 @@
     </div>
   </div>
 
-  {{-- ============ ALAMAT RUMAH ============ --}}
+  {{-- ============ ALAMAT KTP ============ --}}
   <div class="card p-6 mb-5">
-    <h3 class="section-title mb-3">ALAMAT RUMAH</h3>
+    <h3 class="section-title mb-3">ALAMAT KTP</h3>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div class="md:col-span-3">@include('employees._field', ['name' => 'alamat_rumah', 'label' => 'Alamat'])</div>
       <div>@include('employees._field', ['name' => 'rt_rumah', 'label' => 'RT'])</div>
@@ -286,11 +314,22 @@
     </div>
   </div>
 
-  {{-- ============ ALAMAT DOMISILI (KTP) ============ --}}
+  {{-- ============ ALAMAT DOMISILI ============ --}}
   <div class="card p-6 mb-5">
-    <h3 class="section-title mb-3">ALAMAT DOMISILI (KTP)</h3>
+    <div class="flex items-center justify-between flex-wrap gap-2 mb-1">
+      <h3 class="section-title">ALAMAT DOMISILI</h3>
+      <label class="flex items-center gap-2 cursor-pointer select-none py-1 px-3 rounded-xl" style="border:1px solid var(--line); background:var(--surface)">
+        <input type="checkbox" id="sama-alamat-ktp" class="sama-ktp">
+        <span class="text-[13px] font-semibold" style="color:var(--ink-700)">Sama dengan Alamat KTP</span>
+      </label>
+    </div>
+    <p class="text-[12px] mb-3" style="color:var(--ink-300)">Alamat domisili adalah tempat tinggal saat ini. Jika sama dengan alamat di KTP, centang <strong>Sama dengan Alamat KTP</strong> agar terisi otomatis. Jika berbeda, isi sendiri secara manual.</p>
+    <div id="domisili-sama-hint" class="alert alert-info mb-4" style="display:none;background:var(--blue-50);border-color:var(--blue-100);color:var(--blue-800)">
+      <svg style="width:15px;height:15px;flex:none;margin-top:1px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <span>Alamat domisili mengikuti Alamat KTP. Kosongkan centang jika ingin mengisi alamat domisili yang berbeda.</span>
+    </div>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div class="md:col-span-3">@include('employees._field', ['name' => 'alamat_domisili_ktp', 'label' => 'Alamat KTP'])</div>
+      <div class="md:col-span-3">@include('employees._field', ['name' => 'alamat_domisili_ktp', 'label' => 'Alamat Domisili'])</div>
       <div>@include('employees._field', ['name' => 'rt_domisili', 'label' => 'RT'])</div>
       <div>@include('employees._field', ['name' => 'rw_domisili', 'label' => 'RW'])</div>
       <div>@include('employees._field', ['name' => 'kelurahan_domisili', 'label' => 'Kelurahan/Desa'])</div>
@@ -317,4 +356,56 @@
     <a href="{{ route('employees.show', $employee) }}" class="btn-outline px-5 py-2.5 rounded-lg text-sm font-medium">Batal</a>
   </div>
 </form>
+
+<script>
+(function () {
+  var pairs = [
+    ['alamat_rumah', 'alamat_domisili_ktp'],
+    ['rt_rumah', 'rt_domisili'],
+    ['rw_rumah', 'rw_domisili'],
+    ['kelurahan_rumah', 'kelurahan_domisili'],
+    ['kecamatan_rumah', 'kecamatan_domisili'],
+    ['kabkota_rumah', 'kabkota_domisili'],
+    ['provinsi_rumah', 'provinsi_domisili'],
+    ['kodepos_rumah', 'kodepos_domisili']
+  ];
+  var chk = document.getElementById('sama-alamat-ktp');
+  if (!chk) return;
+  var hint = document.getElementById('domisili-sama-hint');
+  var domisiliInputs = pairs.map(function (p) { return document.querySelector('[name="' + p[1] + '"]'); });
+
+  function copyToDomisili() {
+    pairs.forEach(function (p) {
+      var src = document.querySelector('[name="' + p[0] + '"]');
+      var dst = document.querySelector('[name="' + p[1] + '"]');
+      if (src && dst) dst.value = src.value;
+    });
+  }
+
+  function applyToggle() {
+    var same = chk.checked;
+    hint.style.display = same ? 'flex' : 'none';
+    domisiliInputs.forEach(function (el) {
+      if (!el) return;
+      el.disabled = same;
+      el.style.background = same ? '#F8FAFC' : 'transparent';
+      el.style.color = same ? 'var(--ink-400)' : 'inherit';
+    });
+    if (same) copyToDomisili();
+  }
+
+  chk.addEventListener('change', applyToggle);
+  pairs.forEach(function (p) {
+    var src = document.querySelector('[name="' + p[0] + '"]');
+    if (src) src.addEventListener('input', function () { if (chk.checked) copyToDomisili(); });
+  });
+
+  var ktpFilled = (document.querySelector('[name="alamat_rumah"]') && document.querySelector('[name="alamat_rumah"]').value) ? true : false;
+  var domisiliFilled = domisiliInputs.some(function (el) { return el && el.value; });
+  if (!ktpFilled && !domisiliFilled) {
+    chk.checked = true;
+    applyToggle();
+  }
+})();
+</script>
 @endsection

@@ -11,10 +11,6 @@
   </div>
 </div>
 
-@if(session('success'))
-  <div class="alert alert-success mb-4">{{ session('success') }}</div>
-@endif
-
 <form method="POST" action="{{ route('settings.update') }}" class="card p-6 max-w-2xl" enctype="multipart/form-data">
   @csrf
   @method('PUT')

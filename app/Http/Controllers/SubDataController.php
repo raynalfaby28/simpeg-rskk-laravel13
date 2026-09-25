@@ -10,6 +10,7 @@ use App\Models\{
     EmployeePppkContract, EmployeePositionHistory, EmployeeRankHistory,
     EmployeeSalaryHistory, EmployeeSkp, EmployeeTraining,
     EducationLevel, Position, Rank, WorkUnit,
+    AwardType, DiklatType, EducationType,
 };
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -22,7 +23,7 @@ class SubDataController extends Controller
             'pendidikan' => [
                 'label' => 'Pendidikan', 'model' => EmployeeEducation::class, 'tab' => 'pendidikan-diklat', 'module' => 'Pendidikan',
                 'fields' => [
-                    'kategori' => ['label' => 'Jenis Pendidikan', 'type' => 'select', 'options' => ['formal' => 'Pendidikan Formal', 'non_formal' => 'Pendidikan Non Formal'], 'required' => true, 'cols' => 1],
+                    'kategori' => ['label' => 'Jenis Pendidikan', 'type' => 'select', 'source' => 'education-types', 'required' => true, 'cols' => 1],
                     'education_level_id' => ['label' => 'Jenjang', 'type' => 'select', 'source' => 'education-levels', 'required' => true, 'cols' => 1],
                     'institution' => ['label' => 'Institusi', 'type' => 'text', 'cols' => 2],
                     'faculty' => ['label' => 'Fakultas', 'type' => 'text'],
@@ -38,13 +39,7 @@ class SubDataController extends Controller
             'diklat' => [
                 'label' => 'Diklat / Pelatihan', 'model' => EmployeeTraining::class, 'tab' => 'pendidikan-diklat', 'module' => 'Diklat',
                 'fields' => [
-                    'kategori' => ['label' => 'Jenis Diklat', 'type' => 'select', 'options' => [
-                        'struktural' => 'Diklat Struktural',
-                        'fungsional' => 'Diklat Fungsional',
-                        'teknis' => 'Diklat Teknis',
-                        'keahlian_profesi' => 'Sertifikat Keahlian / Profesi',
-                        'bintek_seminar' => 'Bimbingan Teknis / Seminar',
-                    ], 'required' => true, 'cols' => 1],
+                    'kategori' => ['label' => 'Jenis Diklat', 'type' => 'select', 'source' => 'diklat-types', 'required' => true, 'cols' => 1],
                     'nama_pelatihan' => ['label' => 'Nama Pelatihan', 'type' => 'text', 'required' => true, 'cols' => 2],
                     'jenis_pelatihan' => ['label' => 'Jenis Pelatihan', 'type' => 'text'],
                     'penyelenggara' => ['label' => 'Penyelenggara', 'type' => 'text'],
@@ -96,8 +91,8 @@ class SubDataController extends Controller
                     'jenis_mutasi' => ['label' => 'Jenis Mutasi', 'type' => 'text', 'required' => true, 'cols' => 2],
                     'unit_asal_id' => ['label' => 'Unit Asal', 'type' => 'select', 'source' => 'work-units'],
                     'unit_tujuan_id' => ['label' => 'Unit Tujuan', 'type' => 'select', 'source' => 'work-units'],
-                    'jabatan_lama' => ['label' => 'Jabatan Lama', 'type' => 'text'],
-                    'jabatan_baru' => ['label' => 'Jabatan Baru', 'type' => 'text'],
+                    'jabatan_lama' => ['label' => 'Jabatan Lama', 'type' => 'select', 'source' => 'position-names'],
+                    'jabatan_baru' => ['label' => 'Jabatan Baru', 'type' => 'select', 'source' => 'position-names'],
                     'tanggal_mutasi' => ['label' => 'Tanggal Mutasi', 'type' => 'date'],
                     'no_sk' => ['label' => 'Nomor SK', 'type' => 'text'],
                     'alasan' => ['label' => 'Alasan', 'type' => 'textarea', 'cols' => 1],
@@ -128,28 +123,6 @@ class SubDataController extends Controller
                     'no_sk' => ['label' => 'Nomor SK', 'type' => 'text'],
                     'keterangan' => ['label' => 'Keterangan', 'type' => 'textarea', 'cols' => 1],
                     'file_sk_path' => ['label' => 'Dokumen SK', 'type' => 'file'],
-                ],
-            ],
-            'inaktif' => [
-                'label' => 'Riwayat Inaktif', 'model' => EmployeeInactivePeriod::class, 'tab' => 'kepegawaian', 'module' => 'Kepegawaian',
-                'fields' => [
-                    'status' => ['label' => 'Status', 'type' => 'text', 'required' => true, 'cols' => 2],
-                    'tanggal_mulai' => ['label' => 'Tanggal Mulai', 'type' => 'date'],
-                    'tanggal_selesai' => ['label' => 'Tanggal Selesai', 'type' => 'date'],
-                    'alasan' => ['label' => 'Alasan', 'type' => 'textarea', 'cols' => 1],
-                    'no_sk' => ['label' => 'Nomor SK', 'type' => 'text'],
-                    'keterangan' => ['label' => 'Keterangan', 'type' => 'textarea', 'cols' => 1],
-                ],
-            ],
-            'kedudukan_hukum' => [
-                'label' => 'Kedudukan Hukum', 'model' => EmployeeLegalStatus::class, 'tab' => 'kepegawaian', 'module' => 'Kedudukan Hukum',
-                'fields' => [
-                    'status' => ['label' => 'Status', 'type' => 'text', 'required' => true, 'cols' => 2],
-                    'kasus' => ['label' => 'Kasus', 'type' => 'textarea', 'cols' => 1],
-                    'tanggal' => ['label' => 'Tanggal', 'type' => 'date'],
-                    'no_putusan' => ['label' => 'Nomor Putusan', 'type' => 'text'],
-                    'keterangan' => ['label' => 'Keterangan', 'type' => 'textarea', 'cols' => 1],
-                    'file_path' => ['label' => 'Dokumen', 'type' => 'file'],
                 ],
             ],
             'hukdis' => [
@@ -196,7 +169,7 @@ class SubDataController extends Controller
                 ],
             ],
             'kontrak_pppk' => [
-                'label' => 'Riwayat Kontrak PPPK', 'model' => EmployeePppkContract::class, 'tab' => 'kepegawaian', 'module' => 'Kontrak PPPK',
+                'label' => 'Riwayat Kontrak', 'model' => EmployeePppkContract::class, 'tab' => 'kepegawaian', 'module' => 'Kontrak',
                 'fields' => [
                     'nomor_kontrak' => ['label' => 'Nomor Kontrak', 'type' => 'text', 'required' => true, 'cols' => 2],
                     'tanggal_mulai' => ['label' => 'Tanggal Mulai', 'type' => 'date'],
@@ -266,7 +239,7 @@ class SubDataController extends Controller
                 'label' => 'Penghargaan', 'model' => EmployeeAward::class, 'tab' => 'kinerja-penghargaan', 'module' => 'Penghargaan',
                 'fields' => [
                     'nama_penghargaan' => ['label' => 'Nama Penghargaan', 'type' => 'text', 'required' => true, 'cols' => 2],
-                    'jenis_penghargaan' => ['label' => 'Jenis Penghargaan', 'type' => 'text'],
+                    'jenis_penghargaan' => ['label' => 'Jenis Penghargaan', 'type' => 'select', 'source' => 'award-types'],
                     'pemberi_penghargaan' => ['label' => 'Pemberi', 'type' => 'text'],
                     'tingkat' => ['label' => 'Tingkat', 'type' => 'text'],
                     'tahun' => ['label' => 'Tahun', 'type' => 'year'],
@@ -326,6 +299,14 @@ class SubDataController extends Controller
                 $map[$name] = AssetType::where('is_active', true)->orderBy('name')->pluck('name', 'id')->all();
             } elseif (($field['source'] ?? null) === 'positions') {
                 $map[$name] = Position::orderBy('name')->pluck('name', 'id')->all();
+            } elseif (($field['source'] ?? null) === 'position-names') {
+                $map[$name] = Position::orderBy('name')->pluck('name', 'name')->all();
+            } elseif (($field['source'] ?? null) === 'education-types') {
+                $map[$name] = EducationType::where('is_active', true)->orderBy('name')->pluck('name', 'code')->all();
+            } elseif (($field['source'] ?? null) === 'diklat-types') {
+                $map[$name] = DiklatType::where('is_active', true)->orderBy('name')->pluck('name', 'code')->all();
+            } elseif (($field['source'] ?? null) === 'award-types') {
+                $map[$name] = AwardType::where('is_active', true)->orderBy('name')->pluck('name', 'code')->all();
             } elseif (($field['source'] ?? null) === 'ranks') {
                 $map[$name] = Rank::orderBy('urutan')->get()->mapWithKeys(fn ($r) => [$r->id => trim($r->golongan . ($r->pangkat ? ' — ' . $r->pangkat : ''))])->all();
             } elseif (($field['source'] ?? null) === 'work-units') {
@@ -423,6 +404,10 @@ class SubDataController extends Controller
         $model = $conf['model']::create($data);
         AuditLog::record('create', $conf['module'], $model, 'Tambah ' . $conf['label'] . ' untuk ' . $employee->nama_lengkap);
 
+        if ($type === 'mutasi') {
+            $this->syncFromMutation($employee, $model);
+        }
+
         return $this->redirectAfterSave($conf, $employee, $conf['label'] . ' berhasil ditambahkan.');
     }
 
@@ -465,6 +450,9 @@ class SubDataController extends Controller
         $row->save();
 
         AuditLog::record('update', $conf['module'], $row, 'Ubah ' . $conf['label'] . ' milik ' . $employee->nama_lengkap);
+        if ($type === 'mutasi') {
+            $this->syncFromMutation($employee, $row);
+        }
         return $this->redirectAfterSave($conf, $employee, $conf['label'] . ' berhasil diperbarui.');
     }
 
@@ -511,9 +499,37 @@ class SubDataController extends Controller
     }
 
     /**
-     * Arahkan kembali ke halaman asal setelah operasi sub-data:
-     * user pemilik diarahkan ke "Profil Saya", admin/SA ke halaman pegawai.
+     * Riwayat Mutasi = sumber kebenaran jabatan & unit kerja pegawai.
+     * Simpan/ubah baris mutasi ikut memperbarui jabatan dan unit kerja saat ini
+     * pada profil pegawai (tampil di dashboard, ringkasan status, dan daftar pegawai).
      */
+    private function syncFromMutation(Employee $employee, EmployeeMutation $mutation): void
+    {
+        $dirty = false;
+
+        if (filled($mutation->jabatan_baru)) {
+            $position = Position::where('name', $mutation->jabatan_baru)->first();
+            if ($position && $employee->current_position_id !== $position->id) {
+                $employee->current_position_id = $position->id;
+                $dirty = true;
+            }
+        }
+
+        if (filled($mutation->unit_tujuan_id)) {
+            $unitId = (int) $mutation->unit_tujuan_id;
+            if ($employee->work_unit_id !== $unitId) {
+                $employee->work_unit_id = $unitId;
+                $dirty = true;
+            }
+        }
+
+        if ($dirty) {
+            $employee->save();
+            AuditLog::record('update', 'Kepegawaian', $employee,
+                'Jabatan/Unit Kerja diperbarui otomatis dari Riwayat Mutasi untuk ' . $employee->nama_lengkap);
+        }
+    }
+
     private function redirectAfterSave(array $conf, Employee $employee, string $message): \Illuminate\Http\RedirectResponse
     {
         $fragment = 'tab-' . $conf['tab'];

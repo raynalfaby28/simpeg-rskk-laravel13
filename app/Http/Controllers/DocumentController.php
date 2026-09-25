@@ -7,6 +7,8 @@ use App\Models\Document;
 use App\Models\Employee;
 use App\Models\Notification;
 use App\Models\User;
+use App\Models\DocumentType;
+use Illuminate\Validation\Rule;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -33,6 +35,12 @@ class DocumentController extends Controller
         'penghargaan' => 'Penghargaan',
         'lainnya' => 'Lainnya',
     ];
+
+    /** Pilihan Jenis Dokumen dari master data (Jenis Dokumen). */
+    public static function kategoriOptions(): array
+    {
+        return DocumentType::where('is_active', true)->orderBy('name')->pluck('name', 'name')->all();
+    }
 
     /**
      * Daftar dokumen: user melihat miliknya sendiri, admin melihat semua.
@@ -96,7 +104,7 @@ class DocumentController extends Controller
 
         $data = $request->validate([
             'employee_id' => [$admin ? 'required' : 'nullable', 'exists:employees,id'],
-            'jenis_dokumen' => ['required', 'in:'.implode(',', self::KATEGORI)],
+            'jenis_dokumen' => ['required', 'in:'.implode(',', array_keys(self::kategoriOptions()))],
             'kategori' => ['nullable', 'in:'.implode(',', array_keys(self::KATEGORI_GRUP))],
             'no_dokumen' => ['nullable', 'string', 'max:255'],
             'tanggal' => ['nullable', 'date'],
@@ -223,7 +231,7 @@ class DocumentController extends Controller
         $this->authorizeAdmin($request);
 
         $data = $request->validate([
-            'jenis_dokumen' => ['required', 'in:'.implode(',', self::KATEGORI)],
+            'jenis_dokumen' => ['required', 'in:'.implode(',', array_keys(self::kategoriOptions()))],
             'kategori' => ['nullable', 'in:'.implode(',', array_keys(self::KATEGORI_GRUP))],
             'no_dokumen' => ['nullable', 'string', 'max:255'],
             'tanggal' => ['nullable', 'date'],

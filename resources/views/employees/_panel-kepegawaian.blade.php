@@ -17,6 +17,7 @@
       <h3 class="section-title mb-4">Ringkasan Status</h3>
       @include('employees._kv', ['items' => [
         'Status Pegawai' => $e->status_pegawai, 'Jenis ASN' => $e->jenis_asn,
+        'Jenis BLUD' => $e->bludCategory?->name,
         'Kategori' => $e->employeeCategory?->name, 'Status Kerja' => $e->employmentStatus?->name,
         'Tugas Tambahan' => $e->tugas_tambahan_1 ? trim($e->tugas_tambahan_1 . (optional($e->tmt_tugas_tambahan_1)->format('d M Y') ? ' · TMT ' . $e->tmt_tugas_tambahan_1->format('d M Y') : '')) : null,
         'Gaji Pokok' => $e->gaji_pokok ? ($admin ? 'Rp ' . number_format($e->gaji_pokok, 0, ',', '.') : 'Rp ••••') : null,
@@ -272,49 +273,15 @@
     @endif
   </div>
 
-  {{-- Riwayat Inaktif --}}
+  {{-- Riwayat Kontrak --}}
   <div class="mt-10">
     @include('employees._section', [
-      'title' => 'Riwayat Inaktif',
-      'createUrl' => $admin ? route('sub.create', [$e, 'inaktif']) : null,
-      'createLabel' => 'Tambah',
-    ])
-    @if($e->inactivePeriods->isEmpty())
-      <div class="empty-state"><p class="text-[13px]">Belum ada riwayat inaktif.</p></div>
-    @else
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-        @foreach ($e->inactivePeriods->sortByDesc('tanggal_mulai') as $ia)
-          <div class="p-4 rounded-xl card-hover" style="border:1px solid var(--line-soft)">
-            <div class="flex items-center justify-between gap-2">
-              <span class="badge" style="background:var(--amber-50); color:var(--amber-600); border-color:var(--amber-100)">{{ $ia->status }}</span>
-              <div class="text-[11px]" style="color:var(--ink-300)">{{ optional($ia->tanggal_mulai)->format('d M Y') }} – {{ optional($ia->tanggal_selesai)->format('d M Y') }}</div>
-            </div>
-            @if($ia->alasan)<div class="text-[12px] mt-2" style="color:var(--ink-700)">{{ $ia->alasan }}</div>@endif
-            @if($ia->no_sk)<div class="text-[11.5px] mt-1" style="color:var(--ink-500)">SK: {{ $ia->no_sk }}</div>@endif
-            <div class="flex gap-2 mt-2 text-[11.5px]">
-              @if($admin)
-                <a class="font-semibold" style="color:var(--ink-500)" href="{{ route('sub.edit', [$e, 'inaktif', $ia->id]) }}">Edit</a>
-                <form method="POST" action="{{ route('sub.destroy', [$e, 'inaktif', $ia->id]) }}" onsubmit="return confirm('Hapus riwayat inaktif ini?')">
-                  @csrf @method('DELETE')
-                  <button class="font-semibold" style="color:var(--red-600)">Hapus</button>
-                </form>
-              @endif
-            </div>
-          </div>
-        @endforeach
-      </div>
-    @endif
-  </div>
-
-  {{-- Riwayat Kontrak PPPK --}}
-  <div class="mt-10">
-    @include('employees._section', [
-      'title' => 'Riwayat Kontrak PPPK',
+      'title' => 'Riwayat Kontrak',
       'createUrl' => $admin ? route('sub.create', [$e, 'kontrak_pppk']) : null,
       'createLabel' => 'Tambah',
     ])
     @if($e->pppkContracts->isEmpty())
-      <div class="empty-state"><p class="text-[13px]">Belum ada riwayat kontrak PPPK.</p></div>
+      <div class="empty-state"><p class="text-[13px]">Belum ada riwayat kontrak.</p></div>
     @else
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         @foreach ($e->pppkContracts->sortByDesc('tanggal_mulai') as $pp)
@@ -375,49 +342,6 @@
             @if($ec->alamat)<div class="text-[11.5px] mt-1" style="color:var(--ink-500)">{{ $ec->alamat }}</div>@endif
           </div>
         @endforeach
-      </div>
-    @endif
-  </div>
-
-  {{-- Kedudukan Hukum --}}
-  <div class="mt-10">
-    @include('employees._section', [
-      'title' => 'Kedudukan Hukum',
-      'createUrl' => $admin ? route('sub.create', [$e, 'kedudukan_hukum']) : null,
-      'createLabel' => 'Tambah',
-    ])
-    @if($e->legalStatuses->isEmpty())
-      <div class="empty-state"><p class="text-[13px]">Belum ada catatan kedudukan hukum.</p></div>
-    @else
-      <div class="table-wrap">
-        <table class="w-full min-w-[680px]">
-          <thead><tr>
-            <th class="table-th">Status</th><th class="table-th">Kasus</th><th class="table-th">Tanggal</th>
-            <th class="table-th">No. Putusan</th><th class="table-th text-right">Aksi</th>
-          </tr></thead>
-          <tbody>
-            @foreach ($e->legalStatuses as $ls)
-              <tr class="row-line">
-                <td class="table-td font-medium">{{ $ls->status }}</td>
-                <td class="table-td">{{ $ls->kasus ?? '' }}</td>
-                <td class="table-td">{{ optional($ls->tanggal)->format('d M Y') ?? '' }}</td>
-                <td class="table-td">{{ $ls->no_putusan ?? '' }}</td>
-                <td class="table-td text-right">
-                  <div class="flex justify-end gap-2 text-[11.5px]">
-                    @if($ls->file_path)<a class="font-semibold" style="color:var(--blue-600)" href="{{ route('sub.download', ['kedudukan_hukum', $ls->id]) }}">Unduh</a>@endif
-                    @if($admin)
-                      <a class="font-semibold" style="color:var(--ink-500)" href="{{ route('sub.edit', [$e, 'kedudukan_hukum', $ls->id]) }}">Edit</a>
-                      <form method="POST" action="{{ route('sub.destroy', [$e, 'kedudukan_hukum', $ls->id]) }}" onsubmit="return confirm('Hapus catatan ini?')">
-                        @csrf @method('DELETE')
-                        <button class="font-semibold" style="color:var(--red-600)">Hapus</button>
-                      </form>
-                    @endif
-                  </div>
-                </td>
-              </tr>
-            @endforeach
-          </tbody>
-        </table>
       </div>
     @endif
   </div>

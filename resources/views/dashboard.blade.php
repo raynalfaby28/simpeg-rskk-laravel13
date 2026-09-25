@@ -199,7 +199,7 @@
 @else
   {{-- ============ DASHBOARD ADMIN / SUPER ADMIN ============ --}}
   {{-- KPI --}}
-  <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 mb-6 stagger">
+  <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 mb-6 stagger">
     @php
       $kpis = [
         ['Total Pegawai', $totals['pegawai'], '#2563EB', '#60A5FA',
@@ -212,8 +212,6 @@
           '<path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zm-4 7a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6z"/>'],
         ['Menunggu Approval', $pendingApprovals, '#D97706', '#FBBF24',
           '<path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>'],
-        ['Dokumen Belum Verif.', $unverifiedDocuments, '#0EA5E9', '#38BDF8',
-          '<path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9l-6-6H7a2 2 0 00-2 2v14a2 2 0 002 2zM15 3v6h6"/>'],
       ];
     @endphp
     @foreach ($kpis as [$label, $val, $c1, $c2, $icon])
@@ -227,43 +225,6 @@
         </div>
       </div>
     @endforeach
-  </div>
-
-  {{-- Perlu Tindakan --}}
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 stagger">
-    <a href="{{ route('approvals.index') }}" class="card card-hover min-act p-4 flex items-center gap-3.5" style="--h1:#D97706;--h2:#FBBF24">
-      <span class="act-ic">
-        <svg style="width:19px;height:19px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-      </span>
-      <div class="min-w-0 flex-1">
-        <div class="text-[13.5px] font-semibold truncate" style="color:var(--ink-700)">Review Pengajuan Approval</div>
-        <div class="text-[11.5px]" style="color:var(--ink-500)">Menunggu keputusan admin</div>
-      </div>
-      <span class="text-[22px] font-bold shrink-0" style="color:var(--h1)">{{ $pendingApprovals }}</span>
-      <svg class="chev w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-    </a>
-    <a href="{{ route('documents.index') }}" class="card card-hover min-act p-4 flex items-center gap-3.5" style="--h1:#DC2626;--h2:#F87171">
-      <span class="act-ic">
-        <svg style="width:19px;height:19px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9l-6-6H7a2 2 0 00-2 2v14a2 2 0 002 2zM15 3v6h6"/></svg>
-      </span>
-      <div class="min-w-0 flex-1">
-        <div class="text-[13.5px] font-semibold truncate" style="color:var(--ink-700)">Verifikasi Dokumen</div>
-        <div class="text-[11.5px]" style="color:var(--ink-500)">Dokumen belum diverifikasi</div>
-      </div>
-      <span class="text-[22px] font-bold shrink-0" style="color:var(--h1)">{{ $unverifiedDocuments }}</span>
-      <svg class="chev w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-    </a>
-    <a href="{{ route('employees.index') }}" class="card card-hover min-act p-4 flex items-center gap-3.5" style="--h1:#2563EB;--h2:#60A5FA">
-      <span class="act-ic">
-        <svg style="width:19px;height:19px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.4-9a4.2 4.2 0 10-5.9 5.9L19 13l6-6-3.6-3.6z"/></svg>
-      </span>
-      <div class="min-w-0 flex-1">
-        <div class="text-[13.5px] font-semibold truncate" style="color:var(--ink-700)">Profil Belum Lengkap</div>
-        <div class="text-[11.5px]" style="color:var(--ink-500)">Perlu dilengkapi pegawai / admin</div>
-      </div>
-      <span class="text-[22px] font-bold shrink-0" style="color:var(--h1)">{{ $incompleteProfiles }}</span>
-      <svg class="chev w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-    </a>
   </div>
 
   {{-- Grafik Row 1: Unit + Status (donut) --}}
@@ -429,9 +390,8 @@
     </div>
   </div>
 
-  {{-- Sertifikasi + Approval --}}
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
-    <div class="card p-6">
+  {{-- Sertifikasi Masa Berlaku --}}
+  <div class="card p-6 mb-6">
       <div class="flex items-center justify-between mb-4">
         <h3 class="section-title">Sertifikasi Masa Berlaku</h3>
         <a href="{{ route('reports.index') }}" class="text-[12px] font-semibold" style="color:var(--blue-600)">Buka →</a>
@@ -470,44 +430,6 @@
           <span class="badge" style="background:var(--amber-50); color:var(--amber-600); border-color:var(--amber-100)">{{ $sertifAkts['expiring'] }} ≤ 120 hari</span>
         </div>
       @endif
-    </div>
-
-    <div class="card lg:col-span-2 flex flex-col">
-      <div class="flex items-center justify-between px-6 pt-5 pb-4">
-        <div class="flex items-center gap-2.5">
-          <h3 class="section-title">Pengajuan Menunggu Approval</h3>
-          @if($pendingApprovals > 0)
-            <span class="badge" style="background:var(--amber-50); color:var(--amber-600); border-color:var(--amber-100)">{{ $pendingApprovals }} menunggu</span>
-          @endif
-        </div>
-        <a href="{{ route('approvals.index') }}" class="text-[12px] font-semibold whitespace-nowrap" style="color:var(--blue-600)">Lihat Semua →</a>
-      </div>
-      <div class="px-6 pb-6 flex-1">
-        @if($recentRequests->isEmpty())
-          <div class="empty-state">
-            <div class="es-ic"><svg style="width:24px;height:24px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
-            <p class="font-semibold text-[13.5px]" style="color:var(--ink-700)">Tidak Ada Pengajuan Pending</p>
-            <p class="text-[12.5px] mt-1">Semua pengajuan sudah diproses.</p>
-          </div>
-        @else
-          <div class="divide-y" style="border:1px solid var(--line-soft); border-radius:12px; overflow:hidden">
-            @foreach ($recentRequests as $cr)
-              <div class="flex items-center justify-between gap-3 px-4 py-3 hrow">
-                <div class="flex items-center gap-3 min-w-0">
-                  <span class="w-9 h-9 rounded-full flex items-center justify-center flex-none" style="background:var(--blue-50); color:var(--blue-600)">
-                    <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                  </span>
-                  <div class="min-w-0">
-                    <div class="text-[13px] font-semibold truncate">{{ $cr->employee->nama_lengkap }}</div>
-                    <div class="text-[11.5px] capitalize truncate" style="color:var(--ink-500)">Perubahan {{ str_replace('_', ' ', $cr->module_type) }} · {{ $cr->created_at->translatedFormat('d M Y, H:i') }}</div>
-                  </div>
-                </div>
-                <a href="{{ route('approvals.show', $cr) }}" class="btn btn-outline btn-sm shrink-0">Review</a>
-              </div>
-            @endforeach
-          </div>
-        @endif
-      </div>
     </div>
   </div>
 

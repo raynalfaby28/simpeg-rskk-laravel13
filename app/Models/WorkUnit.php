@@ -15,6 +15,11 @@ class WorkUnit extends Model
         return $this->belongsTo(WorkUnit::class, 'parent_id');
     }
 
+    public function bludCategory()
+    {
+        return $this->belongsTo(BludCategory::class);
+    }
+
     public function children()
     {
         return $this->hasMany(WorkUnit::class, 'parent_id');

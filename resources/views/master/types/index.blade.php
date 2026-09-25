@@ -18,25 +18,9 @@
   </div>
 </div>
 
-@if(session('success'))
-  <div class="alert mb-5" style="background:var(--green-50);border-color:var(--green-100);color:var(--green-700)">
-    <svg style="width:16px;height:16px;flex:none;margin-top:1px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-    <span>{{ session('success') }}</span>
-  </div>
-@endif
-
-@if(session('error'))
-  <div class="alert alert-danger mb-5">
-    <svg style="width:16px;height:16px;flex:none;margin-top:1px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-    <span>{{ session('error') }}</span>
-  </div>
-@endif
-
 <div class="card overflow-hidden">
   @if($types->isEmpty())
-    <div class="p-10 text-center text-sm" style="color:var(--ink-500)">
-      Belum ada jenis master data tambahan.
-    </div>
+    <x-empty-state title="Belum Ada Jenis Tambahan" desc="Belum ada jenis master data tambahan buatan pengguna." class="py-10" />
   @else
     <div class="table-wrap">
       <table class="w-full text-sm">

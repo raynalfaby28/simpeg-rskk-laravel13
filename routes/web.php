@@ -94,6 +94,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/pegawai/{employee}/edit', [EmployeeController::class, 'edit'])->name('employees.edit');
         Route::put('/pegawai/{employee}', [EmployeeController::class, 'update'])->name('employees.update');
         Route::post('/pegawai/{employee}/foto', [EmployeeController::class, 'updatePhoto'])->name('employees.photo');
+        Route::patch('/pegawai/{employee}/status', [EmployeeController::class, 'updateStatus'])->name('employees.status');
     });
 
     // Detail pegawai — Admin/Super Admin semua; role user hanya data dirinya sendiri (Policy view)

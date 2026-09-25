@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\AuditLog;
+use App\Models\BludCategory;
 use App\Models\EducationLevel;
 use App\Models\Employee;
 use App\Models\EmployeeCategory;
 use App\Models\EmploymentStatus;
 use App\Models\Position;
+use App\Models\PositionType;
 use App\Models\Rank;
 use App\Models\User;
 use App\Models\WorkUnit;
@@ -17,6 +19,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Arr;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -55,12 +59,9 @@ class EmployeeController extends Controller
         // Filter cepat: semua / aktif / nonaktif / baru
         if ($filter = $request->get('status')) {
             if ($filter === 'aktif') {
-                $query->whereRelation('employmentStatus', 'name', 'Aktif');
+                $query->where('status_aktif', true);
             } elseif ($filter === 'nonaktif') {
-                $query->where(function ($q) {
-                    $q->whereDoesntHave('employmentStatus')
-                        ->orWhereRelation('employmentStatus', 'name', '!=', 'Aktif');
-                });
+                $query->where('status_aktif', false);
             } elseif ($filter === 'baru') {
                 $query->where('created_at', '>=', now()->subDays(30));
             }
@@ -74,7 +75,8 @@ class EmployeeController extends Controller
 
         $totals = [
             'semua' => Employee::count(),
-            'aktif' => Employee::whereRelation('employmentStatus', 'name', 'Aktif')->count(),
+            'aktif' => Employee::where('status_aktif', true)->count(),
+            'nonaktif' => Employee::where('status_aktif', false)->count(),
             'baru' => Employee::where('created_at', '>=', now()->subDays(30))->count(),
         ];
 
@@ -139,12 +141,9 @@ class EmployeeController extends Controller
 
         if ($filter = $request->get('status')) {
             if ($filter === 'aktif') {
-                $query->whereRelation('employmentStatus', 'name', 'Aktif');
+                $query->where('status_aktif', true);
             } elseif ($filter === 'nonaktif') {
-                $query->where(function ($q) {
-                    $q->whereDoesntHave('employmentStatus')
-                        ->orWhereRelation('employmentStatus', 'name', '!=', 'Aktif');
-                });
+                $query->where('status_aktif', false);
             } elseif ($filter === 'baru') {
                 $query->where('created_at', '>=', now()->subDays(30));
             }
@@ -159,7 +158,7 @@ class EmployeeController extends Controller
             fwrite($handle, "\xEF\xBB\xBF");
             fputcsv($handle, [
                 'NIP', 'Nama Lengkap', 'Jabatan', 'Unit Kerja',
-                'Golongan', 'Status', 'Jenis Kelamin', 'Tgl Lahir',
+                'Golongan', 'Status Kepegawaian', 'Jenis Kelamin', 'Tgl Lahir',
             ]);
 
             foreach ($employees as $e) {
@@ -169,7 +168,7 @@ class EmployeeController extends Controller
                     $e->currentPosition?->name ?? '',
                     $e->workUnit?->name ?? '',
                     $e->golonganAkhir?->golongan ?? '',
-                    $e->employmentStatus?->name ?? '',
+                    $e->status_aktif ? 'Aktif' : ($e->alasan_nonaktif ? 'Nonaktif ('.ucfirst(str_replace('_', ' ', $e->alasan_nonaktif)).')' : 'Nonaktif'),
                     $e->jenis_kelamin === 'L' ? 'Laki-laki' : ($e->jenis_kelamin === 'P' ? 'Perempuan' : ''),
                     $e->tanggal_lahir?->format('d-m-Y') ?? '',
                 ]);
@@ -222,10 +221,13 @@ class EmployeeController extends Controller
         $educationLevels = EducationLevel::orderBy('urutan')->get();
         $employeeCategories = EmployeeCategory::orderBy('name')->get();
         $employmentStatuses = EmploymentStatus::orderBy('name')->get();
+        $bludCategories = BludCategory::orderBy('name')->get();
+        $positionTypes = PositionType::where('is_active', true)->orderBy('name')->get(['code', 'name']);
 
         return view('employees.edit', compact(
             'employee', 'workUnits', 'positions', 'ranks',
-            'educationLevels', 'employeeCategories', 'employmentStatuses'
+            'educationLevels', 'employeeCategories', 'employmentStatuses',
+            'bludCategories', 'positionTypes'
         ));
     }
 
@@ -239,6 +241,16 @@ class EmployeeController extends Controller
         $data['izin_pemakaian_gelar'] = $request->boolean('izin_pemakaian_gelar');
         $data['data_updated_at'] = now();
         $data['is_draft'] = $request->boolean('is_draft') ? true : false;
+
+        // Jabatan & unit kerja yang sudah terisi DIKUNCI di Edit Profil.
+        // Perubahan harus dilakukan melalui Riwayat Mutasi (sub: mutasi) agar
+        // riwayat tetap terdokumentasi dan dashboard ikut ter-update.
+        if ($employee->current_position_id) {
+            $data = Arr::except($data, ['current_position_id']);
+        }
+        if ($employee->work_unit_id) {
+            $data = Arr::except($data, ['work_unit_id']);
+        }
 
         $employee->update($data);
 
@@ -413,6 +425,53 @@ class EmployeeController extends Controller
         return redirect()->route('employees.show', $employee)->with('success', 'Foto pegawai berhasil diperbarui.');
     }
 
+    /**
+     * Ubah status aktif/nonaktif pegawai (oleh Admin/Super Admin).
+     * Nonaktif berarti pegawai keluar: resign, pensiun, meninggal, atau lainnya.
+     */
+    public function updateStatus(Request $request, Employee $employee): RedirectResponse
+    {
+        $this->authorize('update', $employee);
+
+        if (auth()->user()->role === 'user') {
+            abort(403, 'Hanya Admin/Super Admin yang dapat mengubah status pegawai.');
+        }
+
+        if ($request->boolean('aktif')) {
+            $data = [
+                'status_aktif' => true,
+                'alasan_nonaktif' => null,
+                'tanggal_nonaktif' => null,
+            ];
+            $description = "Admin/Super Admin mengaktifkan kembali pegawai {$employee->nama_lengkap} ({$employee->nip}).";
+            $message = "Status pegawai dikembalikan menjadi Aktif.";
+        } else {
+            $data = $request->validate([
+                'alasan_nonaktif' => ['required', 'in:resign,pensiun,meninggal,lainnya'],
+                'tanggal_nonaktif' => ['required', 'date'],
+            ], [
+                'alasan_nonaktif.required' => 'Pilih alasan nonaktif (resign, pensiun, dll).',
+                'tanggal_nonaktif.required' => 'Tanggal nonaktif wajib diisi.',
+            ]);
+
+            $data['status_aktif'] = false;
+            $description = "Admin/Super Admin menonaktifkan pegawai {$employee->nama_lengkap} ({$employee->nip}) — alasan: {$data['alasan_nonaktif']}, terhitung ".
+                \Illuminate\Support\Carbon::parse($data['tanggal_nonaktif'])->translatedFormat('d M Y').'.';
+            $message = 'Status pegawai diubah menjadi Nonaktif ('.ucfirst(str_replace('_', ' ', $data['alasan_nonaktif'])).').';
+        }
+
+        $employee->update($data);
+
+        AuditLog::record(
+            action: 'update',
+            module: 'Pegawai',
+            reference: $employee,
+            description: $description,
+        );
+
+        return redirect()->route('employees.show', $employee)->with('success', $message);
+    }
+
     protected function validationRules(): array
     {
         return [
@@ -444,7 +503,11 @@ class EmployeeController extends Controller
             'bapertarum' => ['nullable', 'in:Sudah Diambil,Belum Diambil,Tidak Ada'],
 
             // Status kepegawaian
-            'status_pegawai' => ['nullable', 'in:PNS,PPPK,Honorer,Kontrak,Lainnya'],
+            'status_pegawai' => ['nullable', 'in:PNS,PPPK,Honorer,Kontrak,BLUD,Lainnya'],
+            'blud_category_id' => [
+                'nullable', 'exists:blud_categories,id',
+                Rule::requiredIf(fn () => request()->input('status_pegawai') === 'BLUD'),
+            ],
             'employee_category_id' => ['nullable', 'exists:employee_categories,id'],
             'employment_status_id' => ['nullable', 'exists:employment_statuses,id'],
 
@@ -456,7 +519,7 @@ class EmployeeController extends Controller
             'izin_pemakaian_gelar' => ['nullable', 'boolean'],
 
             // Jabatan & organisasi
-            'jenis_jabatan' => ['nullable', 'in:struktural,fungsional,pelaksana'],
+            'jenis_jabatan' => ['nullable', 'in:'.implode(',', PositionType::pluck('code')->all())],
             'eselon' => ['nullable', 'string', 'max:255'],
             'tmt_eselon' => ['nullable', 'date'],
             'current_position_id' => ['nullable', 'exists:positions,id'],

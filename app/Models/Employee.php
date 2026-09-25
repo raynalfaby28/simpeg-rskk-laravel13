@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Employee extends Model
 {
@@ -15,8 +16,10 @@ class Employee extends Model
     {
         return [
             'tanggal_lahir' => 'date',
+            'tanggal_nonaktif' => 'date',
             'kepemilikan_kpe' => 'boolean',
             'izin_pemakaian_gelar' => 'boolean',
+            'status_aktif' => 'boolean',
             'tmt_eselon' => 'date',
             'tmt_jabatan' => 'date',
             'tmt_tugas_tambahan_1' => 'date',
@@ -53,6 +56,11 @@ class Employee extends Model
     public function employmentStatus()
     {
         return $this->belongsTo(EmploymentStatus::class);
+    }
+
+    public function bludCategory()
+    {
+        return $this->belongsTo(BludCategory::class, 'blud_category_id');
     }
 
     public function golonganAwal()
@@ -204,5 +212,14 @@ class Employee extends Model
     public function getNamaLengkapDenganGelarAttribute(): string
     {
         return trim("{$this->gelar_depan} {$this->nama_lengkap}, {$this->gelar_belakang}");
+    }
+
+    public function getAlasanNonaktifLabelAttribute(): ?string
+    {
+        if (! $this->alasan_nonaktif) {
+            return null;
+        }
+
+        return (string) Str::ucfirst(str_replace('_', ' ', $this->alasan_nonaktif));
     }
 }

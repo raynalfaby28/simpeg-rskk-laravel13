@@ -14,10 +14,6 @@
   <a href="{{ route('documents.create') }}" class="btn-primary px-4 py-2 rounded-lg text-[12.5px] font-medium">+ Unggah Dokumen</a>
 </div>
 
-@if(session('error'))
-  <div class="alert alert-danger mb-4">{{ session('error') }}</div>
-@endif
-
 @if($admin)
   {{-- Filter status + search untuk admin --}}
   <div class="flex items-center justify-between gap-3 mb-3 flex-wrap">
@@ -61,8 +57,8 @@
 @endif
 
 @if($documents->isEmpty())
-  <div class="card p-10 text-center text-sm" style="color:var(--ink-500)">
-    @if($admin) Belum ada dokumen yang sesuai filter. @else Belum ada dokumen diunggah. Gunakan tombol "Unggah Dokumen". @endif
+  <div class="card">
+    <x-empty-state title="{{ $admin ? 'Belum Ada Dokumen' : 'Belum Ada Dokumen Diunggah' }}" desc="{{ $admin ? 'Tidak ada dokumen yang sesuai filter.' : 'Gunakan tombol "Unggah Dokumen" untuk menambahkan.' }}" class="py-10" />
   </div>
 @else
   @if($admin)

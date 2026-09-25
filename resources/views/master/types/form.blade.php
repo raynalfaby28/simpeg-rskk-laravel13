@@ -42,9 +42,18 @@
     </div>
 
     <div>
-      <label class="flabel">Urutan Tampil</label>
-      <input type="number" name="sort" min="0" max="999" value="{{ old('sort', $masterType->sort ?? 100) }}" class="input">
-      <p class="text-[11.5px] mt-1" style="color:var(--ink-400)">Semakin kecil angkanya, semakin atas posisinya di daftar sidebar.</p>
+      <label class="flabel">Urutan Tampil <span class="req">*</span></label>
+      @php
+        $sel = old('sort', isset($masterType) ? $currentPosition : count($gapOptions));
+      @endphp
+      <select name="sort" class="input">
+        @foreach ($gapOptions as $gap => $label)
+          <option value="{{ $gap }}" @selected((int) $sel === (int) $gap)>
+            Urutan ke {{ $gap }} — {{ $label }}{{ isset($masterType) && (int) $currentPosition === (int) $gap ? ' (posisi ini)' : '' }}
+          </option>
+        @endforeach
+      </select>
+      <p class="text-[11.5px] mt-1" style="color:var(--ink-400)">Jenis ini langsung nyatu di daftar Master Data pada urutan tsb (di antara Unit Kerja, Jabatan, dst.).</p>
     </div>
   </div>
 

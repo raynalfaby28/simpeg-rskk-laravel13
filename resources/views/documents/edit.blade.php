@@ -38,7 +38,7 @@
     <label class="flabel">Jenis Dokumen <span class="req">*</span></label>
     <select name="jenis_dokumen" required class="input">
       <option value="">Pilih Jenis</option>
-      @foreach (\App\Http\Controllers\DocumentController::KATEGORI as $kategori)
+      @foreach (\App\Http\Controllers\DocumentController::kategoriOptions() as $kategori)
         <option value="{{ $kategori }}" @selected(old('jenis_dokumen', $document->jenis_dokumen) === $kategori)>{{ $kategori }}</option>
       @endforeach
     </select>

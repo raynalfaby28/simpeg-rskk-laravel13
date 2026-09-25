@@ -609,7 +609,7 @@
     <div class="tab-panel hidden" id="tab-alamat-kontak">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div class="p-5 rounded-xl" style="border:1px solid var(--line-soft)">
-          <h3 class="section-title mb-2">Alamat Rumah</h3>
+          <h3 class="section-title mb-2">Alamat KTP</h3>
           @include('employees._kv', ['items' => [
             'Alamat' => $emp->alamat_rumah,
             'RT / RW' => trim(($emp->rt_rumah ?? '') . ' / ' . ($emp->rw_rumah ?? '')),
@@ -619,9 +619,9 @@
           ]])
         </div>
         <div class="p-5 rounded-xl" style="border:1px solid var(--line-soft)">
-          <h3 class="section-title mb-2">Alamat Domisili (KTP)</h3>
+          <h3 class="section-title mb-2">Alamat Domisili</h3>
           @include('employees._kv', ['items' => [
-            'Alamat KTP' => optional($emp)->alamat_domisili_ktp,
+            'Alamat Domisili' => optional($emp)->alamat_domisili_ktp,
             'RT / RW' => trim(optional($emp)->rt_domisili . ' / ' . optional($emp)->rw_domisili),
             'Kelurahan' => optional($emp)->kelurahan_domisili, 'Kecamatan' => optional($emp)->kecamatan_domisili,
             'Kab/Kota' => optional($emp)->kabkota_domisili, 'Provinsi' => optional($emp)->provinsi_domisili,
@@ -794,7 +794,7 @@
         <h4 class="field-group">Alamat & Kontak</h4>
         <div class="fg">
           <div class="lg-2">
-            <label class="flabel">Alamat Rumah</label>
+            <label class="flabel">Alamat KTP</label>
             <input type="text" name="alamat_rumah" value="{{ old('alamat_rumah', $emp->alamat_rumah) }}" class="input">
           </div>
           <div>
@@ -878,8 +878,8 @@
             <label class="flabel">Jenis Jabatan</label>
             <select name="jenis_jabatan" class="input">
               <option value="">Pilih</option>
-              @foreach(['struktural', 'fungsional', 'pelaksana'] as $jj)
-                <option value="{{ $jj }}" @selected(old('jenis_jabatan', $emp->jenis_jabatan) === $jj)>{{ ucfirst($jj) }}</option>
+              @foreach($positionTypes as $jj)
+                <option value="{{ $jj->code }}" @selected(old('jenis_jabatan', $emp->jenis_jabatan) === $jj->code)>{{ $jj->name }}</option>
               @endforeach
             </select>
           </div>

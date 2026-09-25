@@ -32,7 +32,7 @@
       '<path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.9M9 20H4v-2a4 4 0 013-3.9m6-1.6a4 4 0 100-8m6 2a4 4 0 11-8 0 4 4 0 018 0z"/>'],
     ['Pegawai Aktif', $totals['aktif'] ?? 0, 'var(--green-600)', 'var(--green-50)',
       '<path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>'],
-    ['Pegawai Nonaktif', ($totals['semua'] ?? 0) - ($totals['aktif'] ?? 0), 'var(--red-600)', 'var(--red-50)',
+    ['Pegawai Nonaktif', $totals['nonaktif'] ?? 0, 'var(--red-600)', 'var(--red-50)',
       '<path stroke-linecap="round" stroke-linejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>'],
     ['Pegawai Baru (30 hari)', $totals['baru'] ?? 0, 'var(--teal-600)', 'var(--teal-50)',
       '<path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zm-4 7a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6z"/>'],
@@ -56,7 +56,7 @@
   $statusChips = [
     'semua' => ['Semua', $totals['semua'], 'var(--blue-600)'],
     'aktif' => ['Aktif', $totals['aktif'], 'var(--green-600)'],
-    'nonaktif' => ['Nonaktif', max($totals['semua'] - $totals['aktif'], 0), 'var(--red-600)'],
+    'nonaktif' => ['Nonaktif', $totals['nonaktif'] ?? 0, 'var(--red-600)'],
     'baru' => ['Baru 30 Hari', $totals['baru'], 'var(--teal-600)'],
   ];
   $curStatus = request('status', 'semua');
@@ -150,11 +150,10 @@
       <tbody>
         @forelse($employees as $employee)
           @php
-            $st = $employee->status_pegawai ?? ($employee->employmentStatus?->name ?? null);
-            $isActive = $st ? stripos($st, 'aktif') !== false : false;
+            $isActive = $employee->status_aktif;
             $stPill = $isActive
-              ? ['bg' => 'var(--green-50)', 'fg' => 'var(--green-600)', 'bd' => 'var(--green-100)', 'dot' => 'var(--green-600)']
-              : ['bg' => 'var(--amber-50)', 'fg' => 'var(--amber-600)', 'bd' => 'var(--amber-100)', 'dot' => 'var(--amber-600)'];
+              ? ['bg' => 'var(--green-50)', 'fg' => 'var(--green-600)', 'bd' => 'var(--green-100)', 'dot' => 'var(--green-600)', 'txt' => 'Aktif']
+              : ['bg' => 'var(--red-50)', 'fg' => 'var(--red-600)', 'bd' => 'var(--red-100)', 'dot' => 'var(--red-600)', 'txt' => $employee->alasan_nonaktif ? 'Nonaktif · ' . ucfirst(str_replace('_', ' ', $employee->alasan_nonaktif)) : 'Nonaktif'];
           @endphp
           <tr class="row-line">
             <td class="table-td" style="color:var(--ink-500)">{{ $employees->firstItem() + $loop->index }}</td>
@@ -176,13 +175,10 @@
               <span class="truncate block" title="{{ $employee->workUnit?->name ?? '' }}">{{ $employee->workUnit?->name ?? '—' }}</span>
             </td>
             <td class="table-td whitespace-nowrap">
-              @if($st)
-                <span class="badge" style="background:{{ $stPill['bg'] }}; color:{{ $stPill['fg'] }}; border-color:{{ $stPill['bd'] }}">
-                  <span class="dot" style="background:{{ $stPill['dot'] }}"></span>{{ $st }}
+                <span class="badge" style="background:{{ $stPill['bg'] }}; color:{{ $stPill['fg'] }}; border-color:{{ $stPill['bd'] }}"
+                      title="{{ $isActive ? '' : ($employee->tanggal_nonaktif ? 'Nonaktif sejak ' . $employee->tanggal_nonaktif->translatedFormat('d M Y') : '') }}">
+                  <span class="dot" style="background:{{ $stPill['dot'] }}"></span>{{ $stPill['txt'] }}
                 </span>
-              @else
-                <span style="color:var(--ink-300)">—</span>
-              @endif
             </td>
             <td class="table-td text-right whitespace-nowrap">
               <div class="flex items-center justify-end gap-1.5">

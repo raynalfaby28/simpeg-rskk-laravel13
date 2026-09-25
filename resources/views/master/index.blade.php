@@ -44,15 +44,9 @@
       <a href="{{ route('master.create', $type) }}" class="btn btn-primary">+ Tambah {{ $conf['label'] }}</a>
     </div>
 
-    @if(session('error'))
-      <div class="alert alert-danger mb-4">{{ session('error') }}</div>
-    @endif
-
     <div class="card overflow-hidden">
       @if($rows->isEmpty())
-        <div class="p-10 text-center text-sm" style="color:var(--ink-500)">
-          Belum ada data {{ strtolower($conf['label']) }}.
-        </div>
+        <x-empty-state title="Belum Ada Data {{ strtolower($conf['label']) }}" desc="Belum ada data {{ strtolower($conf['label']) }}. Tambahkan lewat tombol di kanan atas." class="py-10" />
       @else
         <div class="table-wrap">
           <table class="w-full text-sm">

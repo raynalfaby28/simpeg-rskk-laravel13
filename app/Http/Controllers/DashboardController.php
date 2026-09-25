@@ -62,10 +62,10 @@ $notifications = $user->appNotifications()->latest()->limit(5)->get();
     {
         $totals = [
             'pegawai' => Employee::count(),
-            'aktif' => Employee::whereRelation('employmentStatus', 'name', 'Aktif')->count(),
+            'aktif' => Employee::where('status_aktif', true)->count(),
+            'nonaktif' => Employee::where('status_aktif', false)->count(),
             'baru' => Employee::where('created_at', '>=', now()->subDays(30))->count(),
         ];
-        $totals['nonaktif'] = max($totals['pegawai'] - $totals['aktif'], 0);
 
         $pendingApprovals = ChangeRequest::pending()->count();
         $unverifiedDocuments = Document::where('status_verifikasi', '!=', 'terverifikasi')->count();

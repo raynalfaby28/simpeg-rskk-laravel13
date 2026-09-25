@@ -1,9 +1,13 @@
+@php
+  $__loginApp = trim((string) App\Models\Settings::get('app_name', '')) ?: 'SIMPEG RSKK';
+  $__loginTag = trim((string) App\Models\Settings::get('app_tagline', '')) ?: 'Sistem Informasi Manajemen Kepegawaian';
+@endphp
 <!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Masuk · SIMPEG RSKK</title>
+<title>Masuk · {{ $__loginApp }}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -295,8 +299,8 @@
 
   <div class="mob-brand">
     <img src="{{ asset('assets/images/logo-rskk.png') }}" alt="Logo RSKK" onerror="this.style.display='none'">
-    <div class="mb-name">SIMPEG RSKK</div>
-    <div class="mb-sub">Sistem Informasi Manajemen Kepegawaian</div>
+    <div class="mb-name">{{ $__loginApp }}</div>
+    <div class="mb-sub">{{ $__loginTag }}</div>
   </div>
 
   <main class="login-main">
@@ -364,8 +368,8 @@
               <svg style="width:26px;height:26px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
             </div>
           </div>
-          <h1 class="stg" style="--d:.18s">SIMPEG RSKK</h1>
-          <div class="ch-sub stg" style="--d:.24s">Sistem Informasi Manajemen Kepegawaian</div>
+          <h1 class="stg" style="--d:.18s">{{ $__loginApp }}</h1>
+          <div class="ch-sub stg" style="--d:.24s">{{ $__loginTag }}</div>
 
           <div class="ch-welcome">
             <h2 class="stg" style="--d:.36s">Selamat Datang!</h2>
@@ -431,7 +435,7 @@
   </main>
 
   <footer class="login-footer">
-    &copy; {{ date('Y') }} <strong>SIMPEG RSKK</strong> · Sistem Informasi Manajemen Kepegawaian
+    &copy; {{ date('Y') }} <strong>{{ $__loginApp }}</strong> · {{ $__loginTag }}
   </footer>
 
 </div>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AssetType;
 use App\Models\AuditLog;
 use App\Models\AwardType;
+use App\Models\BludCategory;
 use App\Models\DiklatType;
 use App\Models\DocumentType;
 use App\Models\EducationLevel;
@@ -44,6 +45,7 @@ class MasterDataController extends Controller
         $options = [];
         if ($type === 'units') {
             $options['parent_id'] = WorkUnit::orderBy('name')->pluck('name', 'id');
+            $options['blud_category_id'] = BludCategory::orderBy('name')->pluck('name', 'id');
         }
 
         $navTypes = array_map(fn ($c) => $c['label'], $this->types());
@@ -66,6 +68,7 @@ class MasterDataController extends Controller
         $options = [];
         if ($type === 'units') {
             $options['parent_id'] = WorkUnit::orderBy('name')->pluck('name', 'id');
+            $options['blud_category_id'] = BludCategory::orderBy('name')->pluck('name', 'id');
         }
 
         return view('master.form', compact('conf', 'options', 'type'));
@@ -107,6 +110,7 @@ class MasterDataController extends Controller
         $options = [];
         if ($type === 'units') {
             $options['parent_id'] = WorkUnit::where('id', '!=', $id)->orderBy('name')->pluck('name', 'id');
+            $options['blud_category_id'] = BludCategory::orderBy('name')->pluck('name', 'id');
         }
 
         return view('master.form', compact('conf', 'row', 'options', 'type'));
@@ -183,20 +187,22 @@ class MasterDataController extends Controller
         return '#'.$row->getKey();
     }
 
-    private function types(): array
+    private function baseTypes(): array
     {
         $types = [
             'units' => [
                 'label' => 'Unit Kerja',
                 'model' => WorkUnit::class,
-                'columns' => ['code' => 'Kode', 'name' => 'Nama Unit', 'parent' => 'Unit Induk'],
+                'columns' => ['code' => 'Kode', 'name' => 'Nama Unit', 'parent' => 'Unit Induk', 'blud' => 'Jenis BLUD'],
                 'fields' => [
                     ['name' => 'code', 'label' => 'Kode', 'type' => 'text'],
                     ['name' => 'name', 'label' => 'Nama Unit', 'type' => 'text', 'required' => true],
                     ['name' => 'parent_id', 'label' => 'Unit Induk', 'type' => 'select', 'empty' => 'Tanpa Induk'],
+                    ['name' => 'blud_category_id', 'label' => 'Jenis BLUD', 'type' => 'select', 'empty' => '— Bukan BLUD —'],
                 ],
                 'display' => [
                     'parent' => fn ($row) => $row->parent?->name,
+                    'blud' => fn ($row) => $row->bludCategory?->name ?: '—',
                 ],
                 'order' => 'name',
             ],
@@ -248,6 +254,15 @@ class MasterDataController extends Controller
                 'columns' => ['name' => 'Status'],
                 'fields' => [
                     ['name' => 'name', 'label' => 'Status', 'type' => 'text', 'required' => true],
+                ],
+                'order' => 'name',
+            ],
+            'blud' => [
+                'label' => 'Jenis BLUD',
+                'model' => BludCategory::class,
+                'columns' => ['name' => 'Nama Jenis BLUD'],
+                'fields' => [
+                    ['name' => 'name', 'label' => 'Nama Jenis BLUD', 'type' => 'text', 'required' => true],
                 ],
                 'order' => 'name',
             ],
@@ -366,30 +381,70 @@ class MasterDataController extends Controller
             ],
         ];
 
-        foreach (MasterType::query()->where('is_active', true)->orderBy('sort')->orderBy('id')->get() as $mt) {
-            $key = $mt->key;
-            if (isset($types[$key])) {
-                continue;
-            }
+        return $types;
+    }
 
-            $types[$key] = [
-                'label' => $mt->label,
-                'model' => MasterItem::class,
-                'columns' => ['code' => 'Kode', 'name' => 'Nama', 'urutan' => 'Urutan', 'description' => 'Keterangan', 'is_active' => 'Status'],
-                'fields' => [
-                    ['name' => 'code', 'label' => 'Kode', 'type' => 'text'],
-                    ['name' => 'name', 'label' => 'Nama '.$mt->label, 'type' => 'text', 'required' => true],
-                    ['name' => 'urutan', 'label' => 'Urutan', 'type' => 'number'],
-                    ['name' => 'description', 'label' => 'Keterangan', 'type' => 'textarea'],
-                    ['name' => 'is_active', 'label' => 'Aktif', 'type' => 'boolean'],
-                ],
-                'display' => ['is_active' => fn ($row) => $row->is_active ? 'Aktif' : 'Nonaktif'],
-                'order' => 'name',
-                'master_type_id' => $mt->id,
-            ];
+    public function types(): array
+    {
+        return $this->mergeCustomTypes($this->baseTypes());
+    }
+
+    private function mergeCustomTypes(array $builtIns): array
+    {
+        $builtInKeys = array_keys($builtIns);
+        $maxGap = count($builtInKeys) + 1;
+
+        $byGap = [];
+        foreach (MasterType::query()->where('is_active', true)->orderBy('sort')->orderBy('id')->get() as $mt) {
+            $byGap[max(1, min((int) $mt->sort, $maxGap))][] = $mt;
         }
 
-        return $types;
+        $merged = [];
+        for ($gap = 1; $gap <= $maxGap; $gap++) {
+            foreach ($byGap[$gap] ?? [] as $mt) {
+                $merged[$mt->key] = $this->customTypeConf($mt);
+            }
+            if (isset($builtInKeys[$gap - 1])) {
+                $key = $builtInKeys[$gap - 1];
+                $merged[$key] = $builtIns[$key];
+            }
+        }
+
+        return $merged;
+    }
+
+    private function customTypeConf(MasterType $mt): array
+    {
+        return [
+            'label' => $mt->label,
+            'model' => MasterItem::class,
+            'columns' => ['code' => 'Kode', 'name' => 'Nama', 'urutan' => 'Urutan', 'description' => 'Keterangan', 'is_active' => 'Status'],
+            'fields' => [
+                ['name' => 'code', 'label' => 'Kode', 'type' => 'text'],
+                ['name' => 'name', 'label' => 'Nama '.$mt->label, 'type' => 'text', 'required' => true],
+                ['name' => 'urutan', 'label' => 'Urutan', 'type' => 'number'],
+                ['name' => 'description', 'label' => 'Keterangan', 'type' => 'textarea'],
+                ['name' => 'is_active', 'label' => 'Aktif', 'type' => 'boolean'],
+            ],
+            'display' => ['is_active' => fn ($row) => $row->is_active ? 'Aktif' : 'Nonaktif'],
+            'order' => 'name',
+            'master_type_id' => $mt->id,
+        ];
+    }
+
+    public function builtInLabels(): array
+    {
+        return array_values(array_map(fn ($c) => $c['label'], $this->baseTypes()));
+    }
+
+    public function builtInCount(): int
+    {
+        return count($this->baseTypes());
+    }
+
+    public function maxGap(): int
+    {
+        return $this->builtInCount() + 1;
     }
 
     private function conf(string $type): array
@@ -416,7 +471,9 @@ class MasterDataController extends Controller
             } elseif (($field['type'] ?? '') === 'enum') {
                 $rule[] = 'in:'.implode(',', array_keys($field['options']));
             } elseif (($field['type'] ?? '') === 'select') {
-                $rule[] = 'exists:work_units,id';
+                $rule[] = $field['name'] === 'blud_category_id'
+                    ? 'exists:blud_categories,id'
+                    : 'exists:work_units,id';
             }
             $rules[$field['name']] = $rule;
         }
@@ -459,6 +516,7 @@ class MasterDataController extends Controller
             'kategori' => Employee::where('employee_category_id', $row->id)->count(),
             'pendidikan' => Employee::where('pendidikan_awal_id', $row->id)->orWhere('pendidikan_akhir_id', $row->id)->count(),
             'status' => Employee::where('employment_status_id', $row->id)->count(),
+            'blud' => Employee::where('blud_category_id', $row->id)->count(),
             'aset' => EmployeeAsset::where('asset_type_id', $row->id)->count(),
             default => 0,
         };

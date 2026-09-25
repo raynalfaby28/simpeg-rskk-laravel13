@@ -48,8 +48,8 @@
 @php
   $isSA = auth()->user()->role === 'super_admin';
   $isAdmin = in_array(auth()->user()->role, ['super_admin', 'admin']);
-  $st = $employee->status_pegawai ?? ($employee->employmentStatus?->name ?? null);
-  $isActive = $st ? stripos($st, 'aktif') !== false : false;
+  $isActive = $employee->status_aktif;
+  $nonaktifLabel = $employee->alasan_nonaktif ? ucfirst(str_replace('_', ' ', $employee->alasan_nonaktif)) : 'Nonaktif';
   $completenessFields = ['tempat_lahir','tanggal_lahir','jenis_kelamin','agama','nik','hp','email_resmi','no_kk','status_perkawinan','no_npwp'];
   $completeness = round(collect($completenessFields)->filter(fn ($f) => filled($employee->{$f}))->count() / count($completenessFields) * 100);
 
@@ -94,8 +94,69 @@
       <svg style="width:14px;height:14px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.4-9a4.2 4.2 0 10-5.9 5.9L19 13l6-6-3.6-3.6z"/></svg>
       @if($employee->is_draft) Lanjutkan Isi @else Edit Profil @endif
     </a>
+    @if($isAdmin && $isActive && ! $employee->is_draft)
+      <button type="button" class="btn btn-danger" onclick="openModal('modal-nonaktif')">
+        <svg style="width:14px;height:14px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M18.4 6l-1 14.6a1 1 0 01-1 .4H7.6a1 1 0 01-1-.4L5.6 6M9 6V4.5A1.5 1.5 0 0110.5 3h3A1.5 1.5 0 0115 4.5V6m-9 0h12"/></svg>
+        Nonaktifkan
+      </button>
+    @endif
   </div>
 </div>
+
+{{-- Modal Nonaktifkan Pegawai (admin) --}}
+@if($isAdmin && $isActive && ! $employee->is_draft)
+<div id="modal-nonaktif" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="mnn-title" onclick="if(event.target===this) closeModal('modal-nonaktif')">
+  <div class="modal mnn-modal">
+    <div class="flex items-start gap-4 mb-4">
+      <span class="mnn-ic flex-none" aria-hidden="true">
+        <svg style="width:20px;height:20px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l6 6m0-6l-6 6"/></svg>
+      </span>
+      <div class="min-w-0">
+        <h3 id="mnn-title" class="mnn-title">Nonaktifkan Pegawai</h3>
+        <p class="mnn-sub">Nonaktifkan akun dan status kepegawaian pegawai</p>
+      </div>
+    </div>
+
+    <p class="mnn-desc">
+      Nonaktif menandakan pegawai telah keluar — <strong>resign, pensiun, meninggal</strong>, atau lainnya.
+      Pastikan <strong>alasan</strong> dan <strong>tanggal</strong> sudah benar sebelum melanjutkan.
+    </p>
+
+    <form method="POST" action="{{ route('employees.status', $employee) }}" id="form-nonaktif" novalidate>
+      @csrf
+      @method('PATCH')
+      <input type="hidden" name="aktif" value="0">
+
+      <label class="flabel" for="mnn-alasan">Alasan Nonaktif <span class="req">*</span></label>
+      <select name="alasan_nonaktif" id="mnn-alasan" required class="input" data-autofocus>
+        <option value="">Pilih Alasan</option>
+        <option value="resign">Resign / Mengundurkan Diri</option>
+        <option value="pensiun">Pensiun</option>
+        <option value="meninggal">Meninggal Dunia</option>
+        <option value="lainnya">Lainnya</option>
+      </select>
+      <div class="mnn-err" id="mnn-err-alasan"></div>
+
+      <label class="flabel mnn-field" for="mnn-tanggal">Tanggal Nonaktif <span class="req">*</span></label>
+      <input type="date" name="tanggal_nonaktif" id="mnn-tanggal" required max="{{ now()->format('Y-m-d') }}" class="input" placeholder="dd/mm/yyyy">
+      <div class="mnn-err" id="mnn-err-tanggal"></div>
+
+      <div class="mnn-warn">
+        <svg style="width:16px;height:16px;flex:none;margin-top:1px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+        <span>Perubahan ini akan mengubah status pegawai menjadi Nonaktif dan memengaruhi akses akun pegawai di sistem.</span>
+      </div>
+
+      <div class="flex justify-end" style="gap:10px;margin-top:22px">
+        <button type="button" class="btn btn-outline" style="padding:10px 18px" onclick="closeModal('modal-nonaktif')">Batal</button>
+        <button type="submit" class="btn btn-danger" style="padding:10px 18px" id="mnn-submit" data-loading-btn data-loading-text="Menonaktifkan...">
+          <svg data-lb-ic class="lb-hidden" style="width:15px;height:15px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v3m6.4-.4l-2.1 2.1M21 12h-3m.4 6.4l-2.1-2.1M12 21v-3m-6.4.4l2.1-2.1M3 12h3m-.4-6.4l2.1 2.1"/></svg>
+          <span data-lb-tx>Nonaktifkan Pegawai</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+@endif
 
 {{-- PROFILE HEADER --}}
 <div class="card overflow-hidden mb-6 no-print">
@@ -131,11 +192,9 @@
               <span class="dot" style="background:var(--amber-600)"></span>Draft
             </span>
           @endif
-          @if($st)
-            <span class="badge" style="background:{{ $isActive ? 'var(--green-50)' : 'var(--amber-50)' }}; color:{{ $isActive ? 'var(--green-600)' : 'var(--amber-600)' }}; border-color:{{ $isActive ? 'var(--green-100)' : 'var(--amber-100)' }}">
-              <span class="dot" style="background:{{ $isActive ? 'var(--green-600)' : 'var(--amber-600)' }}"></span>{{ $st }}
-            </span>
-          @endif
+          <span class="badge" style="background:{{ $isActive ? 'var(--green-50)' : 'var(--red-50)' }}; color:{{ $isActive ? 'var(--green-600)' : 'var(--red-600)' }}; border-color:{{ $isActive ? 'var(--green-100)' : 'var(--red-100)' }}" title="{{ ! $isActive && $employee->tanggal_nonaktif ? 'Nonaktif sejak ' . $employee->tanggal_nonaktif->translatedFormat('d M Y') : '' }}">
+            <span class="dot" style="background:{{ $isActive ? 'var(--green-600)' : 'var(--red-600)' }}"></span>{{ $isActive ? 'Aktif' : $nonaktifLabel }}
+          </span>
         </div>
         <div class="text-[12px] mt-1" style="font-family:ui-monospace,monospace;color:var(--ink-500)">NIP. {{ $employee->nip ?? '' }}</div>
         <div class="text-[13px] mt-1 font-medium" style="color:var(--ink-700)">{{ $employee->currentPosition?->name }}</div>
@@ -163,6 +222,34 @@
           <strong>Data masih berupa draft.</strong> Pegawai belum resmi tersimpan. Lengkapi & simpan final melalui tombol di atas.
         </div>
         <a href="{{ route('employees.edit', $employee) }}" class="btn-outline px-3 py-1.5 rounded-lg text-[12px] font-semibold" style="border-color:var(--amber-200)">Lanjutkan Isi</a>
+      </div>
+    @endif
+    @if(!$isActive)
+      <div class="mt-4 px-5 py-4 rounded-2xl flex flex-col sm:flex-row sm:items-center gap-4" style="border:1px solid var(--red-100); background:linear-gradient(90deg,var(--red-50) 0%, #fff 55%)">
+        <div class="w-11 h-11 rounded-xl shrink-0 flex items-center justify-center" style="background:var(--red-100); color:var(--red-600)">
+          <svg style="width:20px;height:20px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-[14px] font-semibold" style="color:var(--red-700)">Status Nonaktif</span>
+            <span class="badge" style="background:var(--red-100); color:var(--red-600); border-color:var(--red-200)">{{ $nonaktifLabel }}</span>
+          </div>
+          <div class="text-[12.5px] mt-1.5" style="color:var(--ink-500)">
+            @if($employee->tanggal_nonaktif)Pegawai nonaktif terhitung sejak <span class="font-semibold" style="color:var(--ink-700)">{{ $employee->tanggal_nonaktif->translatedFormat('d F Y') }}</span>@else Pegawai berstatus nonaktif @endif.
+            @if(!$isAdmin) Silakan hubungi administrator jika ada koreksi.@endif
+          </div>
+        </div>
+        @if($isAdmin)
+          <form method="POST" action="{{ route('employees.status', $employee) }}" onsubmit="return confirm('Aktifkan kembali status {{ $employee->nama_lengkap }}?')" class="flex-none">
+            @csrf
+            @method('PATCH')
+            <input type="hidden" name="aktif" value="1">
+            <button type="submit" class="btn btn-sm" style="background:#fff;color:var(--green-700);border:1px solid var(--green-600)">
+              <svg style="width:13px;height:13px;display:inline;margin-right:5px;vertical-align:-1px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+              Aktifkan Kembali
+            </button>
+          </form>
+        @endif
       </div>
     @endif
   </div>
@@ -253,6 +340,7 @@
           <h3 class="section-title mb-3" style="padding-bottom:10px;border-bottom:1px solid var(--line-soft)">Informasi Kepegawaian</h3>
           @include('employees._kv', ['items' => [
             'Status Pegawai' => $employee->status_pegawai,
+            'Jenis BLUD' => $employee->bludCategory?->name,
             'Kategori Pegawai' => $employee->employeeCategory?->name ?? $employee->employmentStatus?->name,
             'Jenis ASN' => $employee->jenis_asn,
             'Unit Kerja' => $employee->workUnit?->name,
@@ -309,7 +397,7 @@
       <h3 class="section-title mb-3 mt-8">Alamat</h3>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div class="p-5 rounded-xl" style="border:1px solid var(--line-soft)">
-          <h3 class="section-title mb-2">Alamat Rumah</h3>
+          <h3 class="section-title mb-2">Alamat KTP</h3>
           @include('employees._kv', ['items' => [
             'Alamat' => $employee->alamat_rumah,
             'RT / RW' => trim(($employee->rt_rumah ?? '') . ' / ' . ($employee->rw_rumah ?? '')),
@@ -319,9 +407,9 @@
           ]])
         </div>
         <div class="p-5 rounded-xl" style="border:1px solid var(--line-soft)">
-          <h3 class="section-title mb-2">Alamat Domisili (KTP)</h3>
+          <h3 class="section-title mb-2">Alamat Domisili</h3>
           @include('employees._kv', ['items' => [
-            'Alamat KTP' => $employee->alamat_domisili_ktp,
+            'Alamat Domisili' => $employee->alamat_domisili_ktp,
             'RT / RW' => trim(($employee->rt_domisili ?? '') . ' / ' . ($employee->rw_domisili ?? '')),
             'Kelurahan' => $employee->kelurahan_domisili, 'Kecamatan' => $employee->kecamatan_domisili,
             'Kab/Kota' => $employee->kabkota_domisili, 'Provinsi' => $employee->provinsi_domisili,
@@ -574,6 +662,7 @@
           <h3 class="section-title mb-4">Ringkasan Status</h3>
           @include('employees._kv', ['items' => [
             'Status Pegawai' => $employee->status_pegawai, 'Jenis ASN' => $employee->jenis_asn,
+        'Jenis BLUD' => $employee->bludCategory?->name,
             'Kategori' => $employee->employeeCategory?->name, 'Status Kerja' => $employee->employmentStatus?->name,
             'Tugas Tambahan' => $employee->tugas_tambahan_1 ? trim($employee->tugas_tambahan_1 . (optional($employee->tmt_tugas_tambahan_1)->format('d M Y') ? ' · TMT ' . $employee->tmt_tugas_tambahan_1->format('d M Y') : '')) : null,
             'Gaji Pokok' => $employee->gaji_pokok ? ($isSA ? 'Rp ' . number_format($employee->gaji_pokok, 0, ',', '.') : (auth()->user()->role === 'admin' ? 'Rp ' . number_format($employee->gaji_pokok, 0, ',', '.') : 'Rp ••••')) : null,
@@ -819,47 +908,15 @@
         @endif
       </div>
 
-      {{-- Riwayat Inaktif --}}
+      {{-- Riwayat Kontrak --}}
       <div class="mt-10">
         @include('employees._section', [
-          'title' => 'Riwayat Inaktif',
-          'createUrl' => route('sub.create', [$employee, 'inaktif']),
-          'createLabel' => 'Tambah',
-        ])
-        @if($employee->inactivePeriods->isEmpty())
-          <div class="empty-state"><p class="text-[13px]">Belum ada riwayat inaktif.</p></div>
-        @else
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            @foreach ($employee->inactivePeriods->sortByDesc('tanggal_mulai') as $ia)
-              <div class="p-4 rounded-xl card-hover" style="border:1px solid var(--line-soft)">
-                <div class="flex items-center justify-between gap-2">
-                  <span class="badge" style="background:var(--amber-50); color:var(--amber-600); border-color:var(--amber-100)">{{ $ia->status }}</span>
-                  <div class="text-[11px]" style="color:var(--ink-300)">{{ optional($ia->tanggal_mulai)->format('d M Y') }} – {{ optional($ia->tanggal_selesai)->format('d M Y') }}</div>
-                </div>
-                @if($ia->alasan)<div class="text-[12px] mt-2" style="color:var(--ink-700)">{{ $ia->alasan }}</div>@endif
-                @if($ia->no_sk)<div class="text-[11.5px] mt-1" style="color:var(--ink-500)">SK: {{ $ia->no_sk }}</div>@endif
-                <div class="flex gap-2 mt-2 text-[11.5px]">
-                  <a class="font-semibold" style="color:var(--ink-500)" href="{{ route('sub.edit', [$employee, 'inaktif', $ia->id]) }}">Edit</a>
-                  <form method="POST" action="{{ route('sub.destroy', [$employee, 'inaktif', $ia->id]) }}" onsubmit="return confirm('Hapus riwayat inaktif ini?')">
-                    @csrf @method('DELETE')
-                    <button class="font-semibold" style="color:var(--red-600)">Hapus</button>
-                  </form>
-                </div>
-              </div>
-            @endforeach
-          </div>
-        @endif
-      </div>
-
-      {{-- Riwayat Kontrak PPPK --}}
-      <div class="mt-10">
-        @include('employees._section', [
-          'title' => 'Riwayat Kontrak PPPK',
+          'title' => 'Riwayat Kontrak',
           'createUrl' => route('sub.create', [$employee, 'kontrak_pppk']),
           'createLabel' => 'Tambah',
         ])
         @if($employee->pppkContracts->isEmpty())
-          <div class="empty-state"><p class="text-[13px]">Belum ada riwayat kontrak PPPK.</p></div>
+          <div class="empty-state"><p class="text-[13px]">Belum ada riwayat kontrak.</p></div>
         @else
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
             @foreach ($employee->pppkContracts->sortByDesc('tanggal_mulai') as $pp)
@@ -916,47 +973,6 @@
                 @if($ec->alamat)<div class="text-[11.5px] mt-1" style="color:var(--ink-500)">{{ $ec->alamat }}</div>@endif
               </div>
             @endforeach
-          </div>
-        @endif
-      </div>
-
-      {{-- Kedudukan Hukum --}}
-      <div class="mt-10">
-        @include('employees._section', [
-          'title' => 'Kedudukan Hukum',
-          'createUrl' => route('sub.create', [$employee, 'kedudukan_hukum']),
-          'createLabel' => 'Tambah',
-        ])
-        @if($employee->legalStatuses->isEmpty())
-          <div class="empty-state"><p class="text-[13px]">Belum ada catatan kedudukan hukum.</p></div>
-        @else
-          <div class="table-wrap">
-            <table class="w-full min-w-[680px]">
-              <thead><tr>
-                <th class="table-th">Status</th><th class="table-th">Kasus</th><th class="table-th">Tanggal</th>
-                <th class="table-th">No. Putusan</th><th class="table-th text-right">Aksi</th>
-              </tr></thead>
-              <tbody>
-                @foreach ($employee->legalStatuses as $ls)
-                  <tr class="row-line">
-                    <td class="table-td font-medium">{{ $ls->status }}</td>
-                    <td class="table-td">{{ $ls->kasus ?? '' }}</td>
-                    <td class="table-td">{{ optional($ls->tanggal)->format('d M Y') ?? '' }}</td>
-                    <td class="table-td">{{ $ls->no_putusan ?? '' }}</td>
-                    <td class="table-td text-right">
-                      <div class="flex justify-end gap-2 text-[11.5px]">
-                        @if($ls->file_path)<a class="font-semibold" style="color:var(--blue-600)" href="{{ route('sub.download', ['kedudukan_hukum', $ls->id]) }}">Unduh</a>@endif
-                        <a class="font-semibold" style="color:var(--ink-500)" href="{{ route('sub.edit', [$employee, 'kedudukan_hukum', $ls->id]) }}">Edit</a>
-                        <form method="POST" action="{{ route('sub.destroy', [$employee, 'kedudukan_hukum', $ls->id]) }}" onsubmit="return confirm('Hapus catatan ini?')">
-                          @csrf @method('DELETE')
-                          <button class="font-semibold" style="color:var(--red-600)">Hapus</button>
-                        </form>
-                      </div>
-                    </td>
-                  </tr>
-                @endforeach
-              </tbody>
-            </table>
           </div>
         @endif
       </div>
@@ -1434,4 +1450,37 @@
     setTab({{ json_encode($frag) }});
   @endif
 </script>
+@push('scripts')
+<script>
+(function(){
+  var modal = document.getElementById('modal-nonaktif');
+  if(!modal) return;
+  var alasan = document.getElementById('mnn-alasan');
+  var tanggal = document.getElementById('mnn-tanggal');
+  var errAlasan = document.getElementById('mnn-err-alasan');
+  var errTanggal = document.getElementById('mnn-err-tanggal');
+  var submit = document.getElementById('mnn-submit');
+  if(!alasan || !tanggal || !errAlasan || !errTanggal || !submit) return;
+  var today = new Date();
+  var todayStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+  function clearErr(){
+    [errAlasan, errTanggal].forEach(function(e){ e.textContent=''; e.classList.remove('show'); });
+    [alasan, tanggal].forEach(function(i){ i.classList.remove('invalid'); });
+  }
+  function showErr(el, control, msg){
+    el.textContent = msg; el.classList.add('show'); control.classList.add('invalid');
+  }
+  submit.addEventListener('click', function(e){
+    clearErr();
+    var ok = true, first = null;
+    if(!alasan.value){ showErr(errAlasan, alasan, 'Silakan pilih alasan nonaktif.'); ok=false; first = alasan; }
+    if(!tanggal.value){ showErr(errTanggal, tanggal, 'Silakan isi tanggal nonaktif.'); ok=false; if(!first) first = tanggal; }
+    else if(tanggal.value > todayStr){ showErr(errTanggal, tanggal, 'Tanggal tidak boleh di masa depan.'); ok=false; if(!first) first = tanggal; }
+    if(!ok){ e.preventDefault(); first.focus({ preventScroll:true }); }
+  });
+  alasan.addEventListener('change', function(){ if(this.value) this.classList.remove('invalid'); });
+  tanggal.addEventListener('change', function(){ if(this.value) this.classList.remove('invalid'); });
+})();
+</script>
+@endpush
 @endsection

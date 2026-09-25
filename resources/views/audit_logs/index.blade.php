@@ -31,7 +31,9 @@
 </form>
 
 @if($logs->isEmpty())
-  <div class="card p-10 text-center text-sm" style="color:var(--ink-500)">Belum ada aktivitas tercatat.</div>
+  <div class="card">
+    <x-empty-state title="Belum Ada Aktivitas" desc="Belum ada aktivitas tercatat di sistem." class="py-10" />
+  </div>
 @else
   <div class="card overflow-hidden">
     <div class="table-wrap">
