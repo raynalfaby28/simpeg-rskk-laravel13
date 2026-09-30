@@ -48,11 +48,6 @@ class Employee extends Model
         return $this->belongsTo(Position::class, 'current_position_id');
     }
 
-    public function employeeCategory()
-    {
-        return $this->belongsTo(EmployeeCategory::class);
-    }
-
     public function employmentStatus()
     {
         return $this->belongsTo(EmploymentStatus::class);
@@ -61,6 +56,11 @@ class Employee extends Model
     public function bludCategory()
     {
         return $this->belongsTo(BludCategory::class, 'blud_category_id');
+    }
+
+    public function outsourcingJob()
+    {
+        return $this->belongsTo(OutsourcingJob::class, 'outsourcing_job_id');
     }
 
     public function golonganAwal()

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\{
-    Document, Employee, EmployeeCategory, EmployeePerformance, EmployeeTraining, EmploymentStatus, Position, Rank, WorkUnit,
+    Document, Employee, EmployeePerformance, EmployeeTraining, EmploymentStatus, Position, Rank, WorkUnit,
 };
 use Illuminate\Http\Request;
 
@@ -23,8 +23,7 @@ class ReportController extends Controller
         $perPosition = Employee::with('currentPosition')->get()->groupBy(fn ($e) => $e->currentPosition?->name ?? 'Belum Diisi')->map->count()->sortDesc();
         $perRank = Employee::with('golonganAkhir')->get()->groupBy(fn ($e) => trim(($e->golonganAkhir?->golongan ?? '—') . ' ' . ($e->golonganAkhir?->pangkat ?? '')))->map->count()->sortDesc();
         $perEducation = Employee::with('pendidikanAkhir')->get()->groupBy(fn ($e) => $e->pendidikanAkhir?->name ?? 'Belum Diisi')->map->count()->sortDesc();
-        $perStatus = Employee::get()->groupBy(fn ($e) => $e->status_pegawai ?: 'Lainnya')->map->count()->sortDesc();
-        $perCategory = Employee::with('employeeCategory')->get()->groupBy(fn ($e) => $e->employeeCategory?->name ?? 'Belum Diisi')->map->count()->sortDesc();
+        $perStatus = Employee::get()->groupBy(fn ($e) => $e->status_pegawai ?: 'Outsourcing')->map->count()->sortDesc();
         $documents = Document::with(['employee'])
             ->when($q, fn ($qq) => $qq->whereHas('employee', fn ($w) => $w->where('nama_lengkap', 'like', "%{$q}%")->orWhere('nip', 'like', "%{$q}%")))
             ->limit(500)->get();
@@ -69,7 +68,6 @@ class ReportController extends Controller
             'perRank' => $perRank,
             'perEducation' => $perEducation,
             'perStatus' => $perStatus,
-            'perCategory' => $perCategory,
             'documents' => $documents,
             'trainings' => $trainings,
             'performances' => $performances,
@@ -95,7 +93,7 @@ class ReportController extends Controller
             'jabatan' => $this->simpleRows(Employee::with('currentPosition')->get(), fn ($e) => [$e->currentPosition?->name ?? 'Belum Diisi']),
             'golongan' => $this->simpleRows(Employee::with('golonganAkhir')->get(), fn ($e) => [trim(($e->golonganAkhir?->golongan ?? '—') . ' ' . ($e->golonganAkhir?->pangkat ?? ''))]),
             'pendidikan' => $this->simpleRows(Employee::with('pendidikanAkhir')->get(), fn ($e) => [$e->pendidikanAkhir?->name ?? 'Belum Diisi']),
-            'status' => $this->simpleRows(Employee::get(), fn ($e) => [$e->status_pegawai ?: 'Lainnya']),
+            'status' => $this->simpleRows(Employee::get(), fn ($e) => [$e->status_pegawai ?: 'Outsourcing']),
             'dokumen' => Document::with('employee')->limit(2000)->get()->map(fn ($d) => [
                 'nip' => $d->employee?->nip ?? '', 'nama' => $d->employee?->nama_lengkap ?? '',
                 'jenis' => $d->jenis_dokumen, 'nomor' => $d->no_dokumen ?? '',

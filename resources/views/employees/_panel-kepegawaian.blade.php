@@ -17,8 +17,8 @@
       <h3 class="section-title mb-4">Ringkasan Status</h3>
       @include('employees._kv', ['items' => [
         'Status Pegawai' => $e->status_pegawai, 'Jenis ASN' => $e->jenis_asn,
-        'Jenis BLUD' => $e->bludCategory?->name,
-        'Kategori' => $e->employeeCategory?->name, 'Status Kerja' => $e->employmentStatus?->name,
+        'Jenis Pekerjaan' => $e->status_pegawai === 'Outsourcing' ? $e->outsourcingJob?->name : null,
+        'Status Kerja' => $e->employmentStatus?->name,
         'Tugas Tambahan' => $e->tugas_tambahan_1 ? trim($e->tugas_tambahan_1 . (optional($e->tmt_tugas_tambahan_1)->format('d M Y') ? ' · TMT ' . $e->tmt_tugas_tambahan_1->format('d M Y') : '')) : null,
         'Gaji Pokok' => $e->gaji_pokok ? ($admin ? 'Rp ' . number_format($e->gaji_pokok, 0, ',', '.') : 'Rp ••••') : null,
       ]])
@@ -110,6 +110,14 @@
       'createUrl' => $admin ? route('sub.create', [$e, 'mutasi']) : null,
       'createLabel' => 'Tambah',
     ])
+    @auth
+      @unless(auth()->user()->role === 'admin' || auth()->user()->role === 'super_admin')
+        <p class="text-[12px] -mt-1 mb-3" style="color:var(--amber-700); background:var(--amber-50); border:1px solid var(--amber-200); padding:8px 10px; border-radius:8px">
+          Perubahan Riwayat Mutasi oleh pegawai memerlukan <strong>persetujuan Admin / Super Admin</strong> terlebih dahulu.
+          Data baru tercatat setelah pengajuan disetujui di Approval Center.
+        </p>
+      @endunless
+    @endauth
     @if($e->mutations->isEmpty())
       <div class="empty-state"><p class="text-[13px]">Belum ada riwayat mutasi.</p></div>
     @else

@@ -7,7 +7,9 @@ use App\Models\DiklatType;
 use App\Models\DocumentType;
 use App\Models\EducationType;
 use App\Models\EmployeeType;
+use App\Models\Position;
 use App\Models\PositionType;
+use App\Models\WorkUnit;
 use Illuminate\Database\Seeder;
 
 /**
@@ -22,6 +24,7 @@ class SyncMasterSeeder extends Seeder
             ['code' => 'struktural', 'name' => 'Struktural'],
             ['code' => 'fungsional', 'name' => 'Fungsional'],
             ['code' => 'pelaksana', 'name' => 'Pelaksana'],
+            ['code' => 'outsourcing', 'name' => 'Outsourcing'],
         ];
         foreach ($positionTypes as $row) {
             PositionType::updateOrCreate(['code' => $row['code']], $row + ['is_active' => true]);
@@ -66,10 +69,22 @@ class SyncMasterSeeder extends Seeder
         }
 
         $employeeTypes = [
-            'PNS', 'PPPK', 'Honorer', 'Kontrak', 'BLUD', 'Lainnya',
+            'PNS', 'PPPK', 'Honorer', 'Kontrak', 'Outsourcing',
         ];
         foreach ($employeeTypes as $name) {
             EmployeeType::updateOrCreate(['code' => $name], ['name' => $name, 'is_active' => true]);
+        }
+
+        // BLUD tidak lagi menjadi jenis/status pegawai (PNS/PPPK/Honorer/Kontrak
+        // termasuk ruang lingkup BLUD); bersihkan baris lama bila masih ada.
+        EmployeeType::where('code', 'BLUD')->delete();
+
+        // Unit Kerja khusus outsourcing (Security, Cleaning Service, Driver, dll).
+        WorkUnit::firstOrCreate(['name' => 'Outsourcing'], ['code' => 'OS']);
+
+        // Jabatan bertipe outsourcing agar muncul di grup "Outsourcing".
+        foreach (['Cleaning Service', 'Security', 'Driver', 'Lainnya'] as $name) {
+            Position::firstOrCreate(['name' => $name], ['type' => 'outsourcing']);
         }
     }
 }

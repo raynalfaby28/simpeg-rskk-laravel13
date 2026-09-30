@@ -4,9 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class EmployeeCategory extends Model
+class OutsourcingJob extends Model
 {
-    protected $table = 'employee_categories';
+    protected $table = 'outsourcing_jobs';
 
     protected $guarded = ['id'];
 }

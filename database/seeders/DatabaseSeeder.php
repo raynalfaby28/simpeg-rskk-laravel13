@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use App\Models\WorkUnit;
-use App\Models\EmployeeCategory;
 use App\Models\EmploymentStatus;
 use App\Models\EducationLevel;
 use Illuminate\Database\Seeder;
@@ -31,12 +30,6 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Subbagian Tata Usaha', 'code' => 'TU', 'created_at' => now(), 'updated_at' => now()],
             ['name' => 'Bidang Pelayanan Medis', 'code' => 'YANMED', 'created_at' => now(), 'updated_at' => now()],
             ['name' => 'Bidang Keperawatan', 'code' => 'KEP', 'created_at' => now(), 'updated_at' => now()],
-        ]);
-
-        EmployeeCategory::insert([
-            ['name' => 'PNS', 'created_at' => now(), 'updated_at' => now()],
-            ['name' => 'PPPK', 'created_at' => now(), 'updated_at' => now()],
-            ['name' => 'Kontrak', 'created_at' => now(), 'updated_at' => now()],
         ]);
 
         EmploymentStatus::insert([

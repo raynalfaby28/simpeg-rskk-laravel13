@@ -29,18 +29,25 @@
 @php
   $empTotals = [
     ['Total Pegawai', $totals['semua'] ?? 0, 'var(--blue-600)', 'var(--blue-50)',
-      '<path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.9M9 20H4v-2a4 4 0 013-3.9m6-1.6a4 4 0 100-8m6 2a4 4 0 11-8 0 4 4 0 018 0z"/>'],
-    ['Pegawai Aktif', $totals['aktif'] ?? 0, 'var(--green-600)', 'var(--green-50)',
-      '<path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>'],
+      '<path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.9M9 20H4v-2a4 4 0 013-3.9m6-1.6a4 4 0 100-8m6 2a4 4 0 11-8 0 4 4 0 018 0z"/>',
+      route('employees.index', ['status' => 'semua'])],
+    ['Pegawai Online', $totals['online'] ?? 0, 'var(--green-600)', 'var(--green-50)',
+      '<path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>',
+      route('employees.index', ['status' => 'online'])],
     ['Pegawai Nonaktif', $totals['nonaktif'] ?? 0, 'var(--red-600)', 'var(--red-50)',
-      '<path stroke-linecap="round" stroke-linejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>'],
-    ['Pegawai Baru (30 hari)', $totals['baru'] ?? 0, 'var(--teal-600)', 'var(--teal-50)',
-      '<path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zm-4 7a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6z"/>'],
+      '<path stroke-linecap="round" stroke-linejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>',
+      route('employees.index', ['status' => 'nonaktif'])],
+    ['Jumlah Pegawai BLUD', $totals['blud'] ?? 0, '#0D9488', '#CCFBF1',
+      '<path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>',
+      route('employees.index', ['status' => 'blud'])],
+    ['Jumlah Pegawai Outsourcing', $totals['outsourcing'] ?? 0, '#7C3AED', '#EDE9FE',
+      '<path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>',
+      route('employees.index', ['status' => 'outsourcing'])],
   ];
 @endphp
-<div class="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-4 stagger">
-  @foreach ($empTotals as [$lbl, $val, $color, $bg, $icon])
-    <div class="stat-card flex items-center gap-3.5">
+<div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 mb-4 stagger">
+  @foreach ($empTotals as [$lbl, $val, $color, $bg, $icon, $link])
+    <a href="{{ $link }}" class="stat-card flex items-center gap-3.5" style="text-decoration:none;color:inherit">
       <div class="stat-ic" style="background:{{ $bg }}; color:{{ $color }}">
         <svg style="width:18px;height:18px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">{!! $icon !!}</svg>
       </div>
@@ -48,16 +55,17 @@
         <div class="stat-val text-[21px]" style="color:{{ $color }}">{{ $val }}</div>
         <div class="text-[11px] font-medium truncate" style="color:var(--ink-500)">{{ $lbl }}</div>
       </div>
-    </div>
+    </a>
   @endforeach
 </div>
 
 @php
   $statusChips = [
     'semua' => ['Semua', $totals['semua'], 'var(--blue-600)'],
-    'aktif' => ['Aktif', $totals['aktif'], 'var(--green-600)'],
+    'online' => ['Online', $totals['online'] ?? 0, 'var(--green-600)'],
     'nonaktif' => ['Nonaktif', $totals['nonaktif'] ?? 0, 'var(--red-600)'],
-    'baru' => ['Baru 30 Hari', $totals['baru'], 'var(--teal-600)'],
+    'blud' => ['BLUD', $totals['blud'] ?? 0, '#0D9488'],
+    'outsourcing' => ['Outsourcing', $totals['outsourcing'] ?? 0, '#7C3AED'],
   ];
   $curStatus = request('status', 'semua');
 @endphp
@@ -151,9 +159,11 @@
         @forelse($employees as $employee)
           @php
             $isActive = $employee->status_aktif;
-            $stPill = $isActive
-              ? ['bg' => 'var(--green-50)', 'fg' => 'var(--green-600)', 'bd' => 'var(--green-100)', 'dot' => 'var(--green-600)', 'txt' => 'Aktif']
-              : ['bg' => 'var(--red-50)', 'fg' => 'var(--red-600)', 'bd' => 'var(--red-100)', 'dot' => 'var(--red-600)', 'txt' => $employee->alasan_nonaktif ? 'Nonaktif · ' . ucfirst(str_replace('_', ' ', $employee->alasan_nonaktif)) : 'Nonaktif'];
+            $stPill = ! $isActive
+              ? ['bg' => 'var(--red-50)', 'fg' => 'var(--red-600)', 'bd' => 'var(--red-100)', 'dot' => 'var(--red-600)', 'txt' => $employee->alasan_nonaktif ? 'Nonaktif · ' . ucfirst(str_replace('_', ' ', $employee->alasan_nonaktif)) : 'Nonaktif']
+              : ($onlineIds->contains($employee->user_id)
+                ? ['bg' => 'var(--green-50)', 'fg' => 'var(--green-600)', 'bd' => 'var(--green-100)', 'dot' => 'var(--green-600)', 'txt' => 'Online']
+                : ['bg' => '#F4F5F7', 'fg' => 'var(--ink-400)', 'bd' => 'var(--line)', 'dot' => 'var(--ink-300)', 'txt' => 'Ofline']);
           @endphp
           <tr class="row-line">
             <td class="table-td" style="color:var(--ink-500)">{{ $employees->firstItem() + $loop->index }}</td>

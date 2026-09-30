@@ -7,6 +7,7 @@ use App\Models\ChangeRequest;
 use App\Models\Employee;
 use App\Models\Notification;
 use App\Models\User;
+use App\Services\MutationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -82,6 +83,15 @@ class ApprovalController extends Controller
 
         try {
             DB::transaction(function () use ($approval, $request) {
+                if ($approval->module_type === 'mutasi') {
+                    // Mutasi: approval langsung mencatatkan ke employee_mutations dan
+                    // memperbarui jabatan/unit kerja pegawai.
+                    $approval->markApproved($request->user());
+                    app(MutationService::class)->applyPendingRequest($approval);
+
+                    return;
+                }
+
                 $approval->approve($request->user());
             });
         } catch (\Throwable $e) {
@@ -118,6 +128,12 @@ class ApprovalController extends Controller
         }
 
         $approval->reject($request->user(), $data['rejection_reason']);
+
+        // Berkas mutasi yang DIUNGGAH saat pengajuan hanya berupa lampiran sementara;
+        // jika pengajuan ditolak, berkas tersebut dibuang agar tidak menumpuk.
+        if ($approval->module_type === 'mutasi') {
+            app(MutationService::class)->discardPendingFiles($approval);
+        }
 
         $this->notifyEmployee($approval, 'rejected');
 

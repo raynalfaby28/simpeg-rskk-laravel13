@@ -7,7 +7,7 @@
   $isSA = auth()->user()->role === 'super_admin';
   $isAdmin = in_array(auth()->user()->role, ['super_admin', 'admin']);
   $roleLabel = ['super_admin' => 'Super Admin', 'admin' => 'Admin', 'user' => 'Pegawai'][auth()->user()->role] ?? '';
-  $editableFields = ['nama_lengkap','gelar_depan','gelar_belakang','nik','tempat_lahir','tanggal_lahir','jenis_kelamin','agama','status_perkawinan','alamat_rumah','kelurahan_rumah','kecamatan_rumah','kabkota_rumah','provinsi_rumah','kodepos_rumah','hp','email_pribadi','employment_status_id','employee_category_id','jenis_asn','work_unit_id','current_position_id','jenis_jabatan','golongan_akhir_id','tmt_jabatan','tmt_skpd','masa_kerja_tahun','masa_kerja_bulan'];
+  $editableFields = ['nama_lengkap','nama_panggilan','gelar_depan','gelar_belakang','nik','no_kk','tempat_lahir','tanggal_lahir','jenis_kelamin','agama','status_perkawinan','golongan_darah','no_npwp','no_bpjs','no_karpeg','no_karis_karsu','no_taspen','no_rekening','bank','bapertarum','pendidikan_awal_id','tahun_pendidikan_awal','pendidikan_akhir_id','tahun_pendidikan_akhir','izin_pemakaian_gelar','alamat_rumah','rt_rumah','rw_rumah','kelurahan_rumah','kecamatan_rumah','kabkota_rumah','provinsi_rumah','kodepos_rumah','alamat_domisili_ktp','rt_domisili','rw_domisili','kelurahan_domisili','kecamatan_domisili','kabkota_domisili','provinsi_domisili','kodepos_domisili','telp','hp','email_pribadi','email_resmi','status_pegawai','outsourcing_job_id','employment_status_id','jenis_asn','status_calon','kedudukan_pegawai','kepemilikan_kpe','work_unit_id','current_position_id','jenis_jabatan','eselon','tmt_eselon','tmt_jabatan','tmt_skpd','tugas_tambahan_1','tmt_tugas_tambahan_1','tugas_tambahan_2','tmt_tugas_tambahan_2','instansi_dipekerjakan','golongan_awal_id','tmt_golongan_awal','golongan_akhir_id','tmt_golongan_akhir','masa_kerja_tahun','masa_kerja_bulan','gaji_pokok','tmt_gaji_berkala_terbaru'];
   $emp = $employee;
   if ($emp) {
     $fullName = trim(implode(' ', array_filter([$emp->gelar_depan, $emp->nama_lengkap, $emp->gelar_belakang])));
@@ -562,7 +562,7 @@
             </div>
           </div>
           @include('employees._kv', ['items' => [
-            'Kategori Pegawai' => $emp->employeeCategory?->name,
+            'Status Kerja' => $emp->employmentStatus?->name,
             'Jenis ASN' => $emp->jenis_asn,
             'Unit Kerja' => $unitName,
             'Jenis Jabatan' => $emp->jenis_jabatan ? ucfirst($emp->jenis_jabatan) : null,
@@ -737,6 +737,22 @@
           <span style="padding:5px 12px;font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-radius:999px;background:var(--blue-50);color:var(--blue-600);flex:none">Menunggu Persetujuan</span>
         </div>
 
+        @if($isAdmin)
+        <div class="card-pad" style="background:var(--amber-50);border:1px solid var(--amber-100);border-radius:12px;margin-bottom:20px;display:flex;gap:10px;align-items:flex-start">
+          <svg style="width:16px;height:16px;flex:none;margin-top:1px" fill="none" viewBox="0 0 24 24" stroke="#B54708" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+          <div class="text-[12.5px]" style="color:var(--amber-800)">
+            <strong>Status Kepegawaian</strong> dan <strong>Pangkat/Golongan/Gaji</strong> di bawah hanya ditampilkan sebagai referensi dan <strong>tidak dapat diubah lewat "Ajukan Perubahan"</strong>. Kelola melalui <strong>Data Pegawai → Edit Profil</strong>. <strong>Jabatan &amp; Organisasi</strong> dapat diisi saat kosong; setelah terdata, perubahannya lewat <strong>Riwayat Mutasi</strong>.
+          </div>
+        </div>
+        @else
+        <div class="card-pad" style="background:var(--amber-50);border:1px solid var(--amber-100);border-radius:12px;margin-bottom:20px;display:flex;gap:10px;align-items:flex-start">
+          <svg style="width:16px;height:16px;flex:none;margin-top:1px" fill="none" viewBox="0 0 24 24" stroke="#B54708" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+          <div class="text-[12.5px]" style="color:var(--amber-800)">
+            <strong>Status Kepegawaian</strong> dan <strong>Pangkat/Golongan/Gaji</strong> dikelola oleh <strong>Admin / Super Admin</strong>. Modul tersebut tetap tampil sebagai referensi. <strong>Jabatan &amp; Organisasi</strong> dapat Anda isi saat masih kosong; setelah terdata, perubahannya lewat <strong>Riwayat Mutasi</strong>.
+          </div>
+        </div>
+        @endif
+
         <h4 class="field-group">Informasi Pribadi</h4>
         <div class="fg">
           <div>
@@ -744,8 +760,8 @@
             <input type="text" name="nama_lengkap" value="{{ old('nama_lengkap', $emp->nama_lengkap) }}" required class="input">
           </div>
           <div>
-            <label class="flabel">NIK</label>
-            <input type="text" name="nik" value="{{ old('nik', $emp->nik) }}" class="input">
+            <label class="flabel">Nama Panggilan</label>
+            <input type="text" name="nama_panggilan" value="{{ old('nama_panggilan', $emp->nama_panggilan) }}" class="input">
           </div>
           <div>
             <label class="flabel">Gelar Depan</label>
@@ -754,6 +770,14 @@
           <div>
             <label class="flabel">Gelar Belakang</label>
             <input type="text" name="gelar_belakang" value="{{ old('gelar_belakang', $emp->gelar_belakang) }}" placeholder="Cth. Sp.PD" class="input">
+          </div>
+          <div>
+            <label class="flabel">NIK</label>
+            <input type="text" name="nik" value="{{ old('nik', $emp->nik) }}" class="input">
+          </div>
+          <div>
+            <label class="flabel">No. KK</label>
+            <input type="text" name="no_kk" value="{{ old('no_kk', $emp->no_kk) }}" class="input">
           </div>
           <div>
             <label class="flabel">Tempat Lahir</label>
@@ -789,16 +813,293 @@
               @endforeach
             </select>
           </div>
+          <div>
+            <label class="flabel">Golongan Darah</label>
+            <input type="text" name="golongan_darah" value="{{ old('golongan_darah', $emp->golongan_darah) }}" placeholder="Cth. O, A, B, AB" class="input">
+          </div>
+          <div>
+            <label class="flabel">Jenis ASN</label>
+            <select name="jenis_asn" class="input" disabled style="background:#F8FAFC;color:var(--ink-400)">
+              <option value="">Pilih</option>
+              @foreach(['PNS', 'PPPK'] as $ja)
+                <option value="{{ $ja }}" @selected(old('jenis_asn', $emp->jenis_asn) === $ja)>{{ $ja }}</option>
+              @endforeach
+            </select>
+          </div>
+          <div>
+            <label class="flabel">Status Calon (CPNS / Calon PPPK)</label>
+            <input type="text" name="status_calon" value="{{ old('status_calon', $emp->status_calon) }}" class="input" disabled style="background:#F8FAFC;color:var(--ink-400)">
+          </div>
+          <div>
+            <label class="flabel">Kedudukan Pegawai</label>
+            <input type="text" name="kedudukan_pegawai" value="{{ old('kedudukan_pegawai', $emp->kedudukan_pegawai) }}" class="input" disabled style="background:#F8FAFC;color:var(--ink-400)">
+          </div>
+          <div>
+            <label class="flabel">Kepemilikan KPE</label>
+            <label class="flex items-center gap-2 text-[12.5px] font-medium" style="color:var(--ink-500)">
+              <input type="checkbox" name="kepemilikan_kpe" value="1" @checked(old('kepemilikan_kpe', $emp->kepemilikan_kpe)) disabled style="accent-color:var(--teal-700)">
+              Kartu PNS Elektronik
+            </label>
+          </div>
         </div>
 
-        <h4 class="field-group">Alamat & Kontak</h4>
+        <h4 class="field-group">Identitas Administratif</h4>
+        <div class="fg">
+          <div>
+            <label class="flabel">No. NPWP</label>
+            <input type="text" name="no_npwp" value="{{ old('no_npwp', $emp->no_npwp) }}" class="input">
+          </div>
+          <div>
+            <label class="flabel">No. BPJS</label>
+            <input type="text" name="no_bpjs" value="{{ old('no_bpjs', $emp->no_bpjs) }}" class="input">
+          </div>
+          <div>
+            <label class="flabel">No. KARPEG</label>
+            <input type="text" name="no_karpeg" value="{{ old('no_karpeg', $emp->no_karpeg) }}" class="input">
+          </div>
+          <div>
+            <label class="flabel">No. KARIS/KARSU</label>
+            <input type="text" name="no_karis_karsu" value="{{ old('no_karis_karsu', $emp->no_karis_karsu) }}" class="input">
+          </div>
+          <div>
+            <label class="flabel">No. TASPEN</label>
+            <input type="text" name="no_taspen" value="{{ old('no_taspen', $emp->no_taspen) }}" class="input">
+          </div>
+          <div>
+            <label class="flabel">No. Rekening</label>
+            <input type="text" name="no_rekening" value="{{ old('no_rekening', $emp->no_rekening) }}" class="input">
+          </div>
+          <div>
+            <label class="flabel">Bank</label>
+            <input type="text" name="bank" value="{{ old('bank', $emp->bank) }}" class="input">
+          </div>
+          <div>
+            <label class="flabel">BAPERTARUM</label>
+            <select name="bapertarum" class="input">
+              <option value="">Pilih</option>
+              @foreach(['Sudah Diambil', 'Belum Diambil', 'Tidak Ada'] as $b)
+                <option value="{{ $b }}" @selected(old('bapertarum', $emp->bapertarum) === $b)>{{ $b }}</option>
+              @endforeach
+            </select>
+          </div>
+        </div>
+
+        <h4 class="field-group">Status Kepegawaian</h4>
+        <p class="text-[12px] -mt-2 mb-3" style="color:var(--amber-600)">Dikelola oleh Admin/Super Admin — data di bawah ditampilkan sebagai referensi.</p>
+        <div class="fg">
+          <div>
+            <label class="flabel">Status Pegawai</label>
+            <select name="status_pegawai" class="input" disabled style="background:#F8FAFC;color:var(--ink-400)">
+              <option value="">Pilih</option>
+              @foreach(['PNS', 'PPPK', 'Honorer', 'Kontrak', 'Outsourcing'] as $sp)
+                <option value="{{ $sp }}" @selected(old('status_pegawai', $emp->status_pegawai) === $sp)>{{ $sp }}</option>
+              @endforeach
+            </select>
+          </div>
+          <div>
+            <label class="flabel">Jenis Pekerjaan (Outsourcing)</label>
+            <select name="outsourcing_job_id" class="input" disabled style="background:#F8FAFC;color:var(--ink-400)">
+              <option value="">Pilih</option>
+              @foreach($outsourcingJobs as $oj)
+                <option value="{{ $oj->id }}" @selected(old('outsourcing_job_id', $emp->outsourcing_job_id) == $oj->id)>{{ $oj->name }}</option>
+              @endforeach
+            </select>
+          </div>
+          <div>
+            <label class="flabel">Status Kerja</label>
+            <select name="employment_status_id" class="input" disabled style="background:#F8FAFC;color:var(--ink-400)">
+              <option value="">Pilih</option>
+              @foreach($employmentStatuses as $es)
+                <option value="{{ $es->id }}" @selected(old('employment_status_id', $emp->employment_status_id) == $es->id)>{{ $es->name }}</option>
+              @endforeach
+            </select>
+          </div>
+        </div>
+
+        <h4 class="field-group">Pendidikan (Ringkas)</h4>
+        <div class="fg">
+          <div>
+            <label class="flabel">Pendidikan Awal</label>
+            <select name="pendidikan_awal_id" class="input">
+              <option value="">Pilih</option>
+              @foreach($educationLevels as $el)
+                <option value="{{ $el->id }}" @selected(old('pendidikan_awal_id', $emp->pendidikan_awal_id) == $el->id)>{{ $el->name }}</option>
+              @endforeach
+            </select>
+          </div>
+          <div>
+            <label class="flabel">Tahun Pendidikan Awal</label>
+            <input type="text" name="tahun_pendidikan_awal" value="{{ old('tahun_pendidikan_awal', $emp->tahun_pendidikan_awal) }}" class="input">
+          </div>
+          <div>
+            <label class="flabel">Pendidikan Akhir</label>
+            <select name="pendidikan_akhir_id" class="input">
+              <option value="">Pilih</option>
+              @foreach($educationLevels as $el)
+                <option value="{{ $el->id }}" @selected(old('pendidikan_akhir_id', $emp->pendidikan_akhir_id) == $el->id)>{{ $el->name }}</option>
+              @endforeach
+            </select>
+          </div>
+          <div>
+            <label class="flabel">Tahun Pendidikan Akhir</label>
+            <input type="text" name="tahun_pendidikan_akhir" value="{{ old('tahun_pendidikan_akhir', $emp->tahun_pendidikan_akhir) }}" class="input">
+          </div>
+          <div>
+            <label class="flex items-center gap-2 text-[12.5px] font-medium" style="color:var(--ink-700)">
+              <input type="checkbox" name="izin_pemakaian_gelar" value="1" @checked(old('izin_pemakaian_gelar', $emp->izin_pemakaian_gelar)) style="accent-color:var(--teal-700)">
+              Izin Pemakaian Gelar
+            </label>
+          </div>
+        </div>
+
+        <h4 class="field-group">Jabatan & Organisasi</h4>
+        @php $lockedJabatan = filled($emp->current_position_id); $lockedUnit = filled($emp->work_unit_id); @endphp
+        @if($lockedJabatan || $lockedUnit)
+        <p class="text-[12px] -mt-2 mb-3" style="color:var(--blue-700)">Jabatan dan Unit Kerja yang sudah terisi <strong>dikunci</strong>. Untuk mengubahnya, gunakan menu <strong>Riwayat Mutasi</strong> pada profil pegawai agar perubahan tetap tercatat.</p>
+        @else
+        <p class="text-[12px] -mt-2 mb-3" style="color:var(--ink-300)">Kosong saat ini — Anda dapat mengisinya dan mengajukan lewat formulir ini.</p>
+        @endif
+        <div class="fg">
+          <div>
+            <label class="flabel">Jenis Jabatan</label>
+            <select name="jenis_jabatan" class="input">
+              <option value="">Pilih</option>
+              @foreach($positionTypes as $jj)
+                <option value="{{ $jj->code }}" @selected(old('jenis_jabatan', $emp->jenis_jabatan) === $jj->code)>{{ $jj->name }}</option>
+              @endforeach
+            </select>
+          </div>
+          <div>
+            <label class="flabel">Eselon</label>
+            <input type="text" name="eselon" value="{{ old('eselon', $emp->eselon) }}" class="input">
+          </div>
+          <div>
+            <label class="flabel">TMT Eselon</label>
+            <input type="date" name="tmt_eselon" value="{{ old('tmt_eselon', optional($emp->tmt_eselon)->format('Y-m-d')) }}" class="input">
+          </div>
+          <div>
+            <label class="flabel">Jabatan Saat Ini @if($lockedJabatan)<span class="badge" style="background:var(--amber-50);color:var(--amber-600);border-color:var(--amber-100)">Dikunci</span>@endif</label>
+            <select name="current_position_id" class="input" @disabled($lockedJabatan) @if($lockedJabatan) style="background:#F8FAFC;color:var(--ink-400)" @endif>
+              <option value="">Pilih</option>
+              @foreach($positions as $pos)
+                <option value="{{ $pos->id }}" @selected(old('current_position_id', $emp->current_position_id) == $pos->id)>{{ $pos->name }}</option>
+              @endforeach
+            </select>
+            @if($lockedJabatan)
+            <p class="text-[11px] mt-1.5 flex items-center gap-1.5" style="color:var(--amber-600)">
+              <svg style="width:12px;height:12px;flex:none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+              Diubah melalui Riwayat Mutasi.
+            </p>
+            @endif
+          </div>
+          <div>
+            <label class="flabel">TMT Jabatan</label>
+            <input type="date" name="tmt_jabatan" value="{{ old('tmt_jabatan', optional($emp->tmt_jabatan)->format('Y-m-d')) }}" class="input" @disabled($lockedJabatan) @if($lockedJabatan) style="background:#F8FAFC;color:var(--ink-400)" @endif>
+          </div>
+          <div>
+            <label class="flabel">Tugas Tambahan 1</label>
+            <input type="text" name="tugas_tambahan_1" value="{{ old('tugas_tambahan_1', $emp->tugas_tambahan_1) }}" class="input">
+          </div>
+          <div>
+            <label class="flabel">TMT Tugas Tambahan 1</label>
+            <input type="date" name="tmt_tugas_tambahan_1" value="{{ old('tmt_tugas_tambahan_1', optional($emp->tmt_tugas_tambahan_1)->format('Y-m-d')) }}" class="input">
+          </div>
+          <div>
+            <label class="flabel">Tugas Tambahan 2</label>
+            <input type="text" name="tugas_tambahan_2" value="{{ old('tugas_tambahan_2', $emp->tugas_tambahan_2) }}" class="input">
+          </div>
+          <div>
+            <label class="flabel">TMT Tugas Tambahan 2</label>
+            <input type="date" name="tmt_tugas_tambahan_2" value="{{ old('tmt_tugas_tambahan_2', optional($emp->tmt_tugas_tambahan_2)->format('Y-m-d')) }}" class="input">
+          </div>
+          <div>
+            <label class="flabel">Unit Kerja @if($lockedUnit)<span class="badge" style="background:var(--amber-50);color:var(--amber-600);border-color:var(--amber-100)">Dikunci</span>@endif</label>
+            <select name="work_unit_id" class="input" @disabled($lockedUnit) @if($lockedUnit) style="background:#F8FAFC;color:var(--ink-400)" @endif>
+              <option value="">Pilih</option>
+              @foreach($workUnits as $wu)
+                <option value="{{ $wu->id }}" @selected(old('work_unit_id', $emp->work_unit_id) == $wu->id)>{{ $wu->name }}</option>
+              @endforeach
+            </select>
+            @if($lockedUnit)
+            <p class="text-[11px] mt-1.5 flex items-center gap-1.5" style="color:var(--amber-600)">
+              <svg style="width:12px;height:12px;flex:none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+              Diubah melalui Riwayat Mutasi.
+            </p>
+            @endif
+          </div>
+          <div>
+            <label class="flabel">TMT Unit Kerja (SKPD)</label>
+            <input type="date" name="tmt_skpd" value="{{ old('tmt_skpd', optional($emp->tmt_skpd)->format('Y-m-d')) }}" class="input" @disabled($lockedUnit) @if($lockedUnit) style="background:#F8FAFC;color:var(--ink-400)" @endif>
+          </div>
+          <div>
+            <label class="flabel">Instansi Tempat Diperkerjakan</label>
+            <input type="text" name="instansi_dipekerjakan" value="{{ old('instansi_dipekerjakan', $emp->instansi_dipekerjakan) }}" class="input">
+          </div>
+        </div>
+
+        <h4 class="field-group">Pangkat, Golongan & Gaji</h4>
+        <p class="text-[12px] -mt-2 mb-3" style="color:var(--amber-600)">Dikelola oleh Admin/Super Admin — data di bawah ditampilkan sebagai referensi.</p>
+        <div class="fg">
+          <div>
+            <label class="flabel">Golongan Awal</label>
+            <select name="golongan_awal_id" class="input" disabled style="background:#F8FAFC;color:var(--ink-400)">
+              <option value="">Pilih</option>
+              @foreach($ranks as $rank)
+                <option value="{{ $rank->id }}" @selected(old('golongan_awal_id', $emp->golongan_awal_id) == $rank->id)>{{ $rank->golongan }} {{ $rank->pangkat ? '— ' . $rank->pangkat : '' }}</option>
+              @endforeach
+            </select>
+          </div>
+          <div>
+            <label class="flabel">TMT Golongan Awal</label>
+            <input type="date" name="tmt_golongan_awal" value="{{ old('tmt_golongan_awal', optional($emp->tmt_golongan_awal)->format('Y-m-d')) }}" class="input" disabled style="background:#F8FAFC;color:var(--ink-400)">
+          </div>
+          <div>
+            <label class="flabel">Golongan Akhir</label>
+            <select name="golongan_akhir_id" class="input" disabled style="background:#F8FAFC;color:var(--ink-400)">
+              <option value="">Pilih</option>
+              @foreach($ranks as $rk)
+                <option value="{{ $rk->id }}" @selected(old('golongan_akhir_id', $emp->golongan_akhir_id) == $rk->id)>{{ $rk->golongan }} {{ $rk->pangkat ? '— ' . $rk->pangkat : '' }}</option>
+              @endforeach
+            </select>
+          </div>
+          <div>
+            <label class="flabel">TMT Golongan Akhir</label>
+            <input type="date" name="tmt_golongan_akhir" value="{{ old('tmt_golongan_akhir', optional($emp->tmt_golongan_akhir)->format('Y-m-d')) }}" class="input" disabled style="background:#F8FAFC;color:var(--ink-400)">
+          </div>
+          <div>
+            <label class="flabel">Masa Kerja (Tahun)</label>
+            <input type="number" min="0" max="70" name="masa_kerja_tahun" value="{{ old('masa_kerja_tahun', $emp->masa_kerja_tahun) }}" class="input" disabled style="background:#F8FAFC;color:var(--ink-400)">
+          </div>
+          <div>
+            <label class="flabel">Masa Kerja (Bulan)</label>
+            <input type="number" min="0" max="11" name="masa_kerja_bulan" value="{{ old('masa_kerja_bulan', $emp->masa_kerja_bulan) }}" class="input" disabled style="background:#F8FAFC;color:var(--ink-400)">
+          </div>
+          <div>
+            <label class="flabel">Gaji Pokok</label>
+            <input type="text" name="gaji_pokok" value="{{ old('gaji_pokok', $emp->gaji_pokok) }}" class="input" disabled style="background:#F8FAFC;color:var(--ink-400)">
+          </div>
+          <div>
+            <label class="flabel">TMT Gaji Berkala Terbaru</label>
+            <input type="date" name="tmt_gaji_berkala_terbaru" value="{{ old('tmt_gaji_berkala_terbaru', optional($emp->tmt_gaji_berkala_terbaru)->format('Y-m-d')) }}" class="input" disabled style="background:#F8FAFC;color:var(--ink-400)">
+          </div>
+        </div>
+
+        <h4 class="field-group">Alamat KTP</h4>
         <div class="fg">
           <div class="lg-2">
-            <label class="flabel">Alamat KTP</label>
+            <label class="flabel">Alamat</label>
             <input type="text" name="alamat_rumah" value="{{ old('alamat_rumah', $emp->alamat_rumah) }}" class="input">
           </div>
           <div>
-            <label class="flabel">Kelurahan</label>
+            <label class="flabel">RT</label>
+            <input type="text" name="rt_rumah" value="{{ old('rt_rumah', $emp->rt_rumah) }}" class="input">
+          </div>
+          <div>
+            <label class="flabel">RW</label>
+            <input type="text" name="rw_rumah" value="{{ old('rw_rumah', $emp->rw_rumah) }}" class="input">
+          </div>
+          <div>
+            <label class="flabel">Kelurahan/Desa</label>
             <input type="text" name="kelurahan_rumah" value="{{ old('kelurahan_rumah', $emp->kelurahan_rumah) }}" class="input">
           </div>
           <div>
@@ -814,8 +1115,64 @@
             <input type="text" name="provinsi_rumah" value="{{ old('provinsi_rumah', $emp->provinsi_rumah) }}" class="input">
           </div>
           <div>
-            <label class="flabel">Kodepos</label>
+            <label class="flabel">Kode Pos</label>
             <input type="text" name="kodepos_rumah" value="{{ old('kodepos_rumah', $emp->kodepos_rumah) }}" class="input">
+          </div>
+        </div>
+
+        {{-- ===== ALAMAT DOMISILI ===== --}}
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+          <h4 class="field-group">Alamat Domisili</h4>
+          <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none;padding:6px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface)">
+            <input type="checkbox" id="sama-alamat-ktp" class="sama-ktp">
+            <span class="text-[13px] font-semibold" style="color:var(--ink-700)">Sama dengan Alamat KTP</span>
+          </label>
+        </div>
+        <p class="text-[12px] mb-3" style="color:var(--ink-300)">Alamat domisili adalah tempat tinggal saat ini. Jika sama dengan alamat di KTP, centang <strong>Sama dengan Alamat KTP</strong> agar terisi otomatis. Jika berbeda, isi sendiri secara manual.</p>
+        <div id="domisili-sama-hint" class="card-pad" style="display:none;background:var(--blue-50);border:1px solid var(--blue-100);border-radius:12px;margin-bottom:16px;color:var(--blue-800);gap:8px;align-items:flex-start">
+          <span>Alamat domisili mengikuti Alamat KTP. Kosongkan centang jika ingin mengisi alamat domisili yang berbeda.</span>
+        </div>
+        <div class="fg">
+          <div class="lg-2">
+            <label class="flabel">Alamat Domisili</label>
+            <input type="text" name="alamat_domisili_ktp" value="{{ old('alamat_domisili_ktp', $emp->alamat_domisili_ktp) }}" class="input">
+          </div>
+          <div>
+            <label class="flabel">RT</label>
+            <input type="text" name="rt_domisili" value="{{ old('rt_domisili', $emp->rt_domisili) }}" class="input">
+          </div>
+          <div>
+            <label class="flabel">RW</label>
+            <input type="text" name="rw_domisili" value="{{ old('rw_domisili', $emp->rw_domisili) }}" class="input">
+          </div>
+          <div>
+            <label class="flabel">Kelurahan/Desa</label>
+            <input type="text" name="kelurahan_domisili" value="{{ old('kelurahan_domisili', $emp->kelurahan_domisili) }}" class="input">
+          </div>
+          <div>
+            <label class="flabel">Kecamatan</label>
+            <input type="text" name="kecamatan_domisili" value="{{ old('kecamatan_domisili', $emp->kecamatan_domisili) }}" class="input">
+          </div>
+          <div>
+            <label class="flabel">Kab/Kota</label>
+            <input type="text" name="kabkota_domisili" value="{{ old('kabkota_domisili', $emp->kabkota_domisili) }}" class="input">
+          </div>
+          <div>
+            <label class="flabel">Provinsi</label>
+            <input type="text" name="provinsi_domisili" value="{{ old('provinsi_domisili', $emp->provinsi_domisili) }}" class="input">
+          </div>
+          <div>
+            <label class="flabel">Kode Pos</label>
+            <input type="text" name="kodepos_domisili" value="{{ old('kodepos_domisili', $emp->kodepos_domisili) }}" class="input">
+          </div>
+        </div>
+
+        {{-- ===== KONTAK ===== --}}
+        <h4 class="field-group">Kontak</h4>
+        <div class="fg">
+          <div>
+            <label class="flabel">Telepon</label>
+            <input type="text" name="telp" value="{{ old('telp', $emp->telp) }}" class="input">
           </div>
           <div>
             <label class="flabel">No. HP</label>
@@ -825,90 +1182,65 @@
             <label class="flabel">Email Pribadi</label>
             <input type="email" name="email_pribadi" value="{{ old('email_pribadi', $emp->email_pribadi) }}" class="input">
           </div>
+          <div>
+            <label class="flabel">Email Resmi</label>
+            <input type="email" name="email_resmi" value="{{ old('email_resmi', $emp->email_resmi) }}" class="input">
+          </div>
         </div>
 
-        <h4 class="field-group">Informasi Kepegawaian</h4>
-        <div class="fg">
-          <div>
-            <label class="flabel">Status Kerja</label>
-            <select name="employment_status_id" class="input">
-              <option value="">Pilih</option>
-              @foreach($employmentStatuses as $es)
-                <option value="{{ $es->id }}" @selected(old('employment_status_id', $emp->employment_status_id) == $es->id)>{{ $es->name }}</option>
-              @endforeach
-            </select>
-          </div>
-          <div>
-            <label class="flabel">Kategori Pegawai</label>
-            <select name="employee_category_id" class="input">
-              <option value="">Pilih</option>
-              @foreach($employeeCategories as $cat)
-                <option value="{{ $cat->id }}" @selected(old('employee_category_id', $emp->employee_category_id) == $cat->id)>{{ $cat->name }}</option>
-              @endforeach
-            </select>
-          </div>
-          <div>
-            <label class="flabel">Jenis ASN</label>
-            <select name="jenis_asn" class="input">
-              <option value="">Pilih</option>
-              @foreach(['PNS', 'PPPK'] as $ja)
-                <option value="{{ $ja }}" @selected(old('jenis_asn', $emp->jenis_asn) === $ja)>{{ $ja }}</option>
-              @endforeach
-            </select>
-          </div>
-          <div>
-            <label class="flabel">Unit Kerja</label>
-            <select name="work_unit_id" class="input">
-              <option value="">Pilih</option>
-              @foreach($workUnits as $wu)
-                <option value="{{ $wu->id }}" @selected(old('work_unit_id', $emp->work_unit_id) == $wu->id)>{{ $wu->name }}</option>
-              @endforeach
-            </select>
-          </div>
-          <div>
-            <label class="flabel">Jabatan</label>
-            <select name="current_position_id" class="input">
-              <option value="">Pilih</option>
-              @foreach($positions as $pos)
-                <option value="{{ $pos->id }}" @selected(old('current_position_id', $emp->current_position_id) == $pos->id)>{{ $pos->name }}</option>
-              @endforeach
-            </select>
-          </div>
-          <div>
-            <label class="flabel">Jenis Jabatan</label>
-            <select name="jenis_jabatan" class="input">
-              <option value="">Pilih</option>
-              @foreach($positionTypes as $jj)
-                <option value="{{ $jj->code }}" @selected(old('jenis_jabatan', $emp->jenis_jabatan) === $jj->code)>{{ $jj->name }}</option>
-              @endforeach
-            </select>
-          </div>
-          <div>
-            <label class="flabel">Pangkat / Golongan</label>
-            <select name="golongan_akhir_id" class="input">
-              <option value="">Pilih</option>
-              @foreach($ranks as $rank)
-                <option value="{{ $rank->id }}" @selected(old('golongan_akhir_id', $emp->golongan_akhir_id) == $rank->id)>{{ $rank->golongan }} {{ $rank->pangkat ? '— ' . $rank->pangkat : '' }}</option>
-              @endforeach
-            </select>
-          </div>
-          <div>
-            <label class="flabel">TMT Jabatan</label>
-            <input type="date" name="tmt_jabatan" value="{{ old('tmt_jabatan', optional($emp->tmt_jabatan)->format('Y-m-d')) }}" class="input">
-          </div>
-          <div>
-            <label class="flabel">TMT SKPD / Unit Kerja</label>
-            <input type="date" name="tmt_skpd" value="{{ old('tmt_skpd', optional($emp->tmt_skpd)->format('Y-m-d')) }}" class="input">
-          </div>
-          <div>
-            <label class="flabel">Masa Kerja (Tahun)</label>
-            <input type="number" min="0" max="70" name="masa_kerja_tahun" value="{{ old('masa_kerja_tahun', $emp->masa_kerja_tahun) }}" class="input">
-          </div>
-          <div>
-            <label class="flabel">Masa Kerja (Bulan)</label>
-            <input type="number" min="0" max="11" name="masa_kerja_bulan" value="{{ old('masa_kerja_bulan', $emp->masa_kerja_bulan) }}" class="input">
-          </div>
-        </div>
+        <script>
+(function () {
+  var pairs = [
+    ['alamat_rumah', 'alamat_domisili_ktp'],
+    ['rt_rumah', 'rt_domisili'],
+    ['rw_rumah', 'rw_domisili'],
+    ['kelurahan_rumah', 'kelurahan_domisili'],
+    ['kecamatan_rumah', 'kecamatan_domisili'],
+    ['kabkota_rumah', 'kabkota_domisili'],
+    ['provinsi_rumah', 'provinsi_domisili'],
+    ['kodepos_rumah', 'kodepos_domisili']
+  ];
+  var chk = document.getElementById('sama-alamat-ktp');
+  if (!chk) return;
+  var hint = document.getElementById('domisili-sama-hint');
+  var domisiliInputs = pairs.map(function (p) { return document.querySelector('[name="' + p[1] + '"]'); });
+
+  function copyToDomisili() {
+    pairs.forEach(function (p) {
+      var src = document.querySelector('[name="' + p[0] + '"]');
+      var dst = document.querySelector('[name="' + p[1] + '"]');
+      if (src && dst) dst.value = src.value;
+    });
+  }
+
+  function applyToggle() {
+    var same = chk.checked;
+    hint.style.display = same ? 'flex' : 'none';
+    domisiliInputs.forEach(function (el) {
+      if (!el) return;
+      el.disabled = same;
+      el.style.background = same ? '#F8FAFC' : 'transparent';
+      el.style.color = same ? 'var(--ink-400)' : 'inherit';
+    });
+    if (same) copyToDomisili();
+  }
+
+  chk.addEventListener('change', applyToggle);
+  pairs.forEach(function (p) {
+    var src = document.querySelector('[name="' + p[0] + '"]');
+    if (src) src.addEventListener('input', function () { if (chk.checked) copyToDomisili(); });
+  });
+
+  var ktpFilled = (document.querySelector('[name="alamat_rumah"]') && document.querySelector('[name="alamat_rumah"]').value) ? true : false;
+  var domisiliFilled = domisiliInputs.some(function (el) { return el && el.value; });
+  if (!ktpFilled && !domisiliFilled) {
+    chk.checked = true;
+    applyToggle();
+  }
+})();
+</script>
+
+        
 
         <div class="card-pad" style="background:var(--blue-50);border:1px solid var(--blue-100);border-radius:12px;margin-bottom:20px;display:flex;gap:10px;align-items:flex-start">
           <svg style="width:17px;height:17px;flex:none;margin-top:1px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" color="#1D4ED8"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>

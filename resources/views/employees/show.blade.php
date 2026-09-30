@@ -340,8 +340,8 @@
           <h3 class="section-title mb-3" style="padding-bottom:10px;border-bottom:1px solid var(--line-soft)">Informasi Kepegawaian</h3>
           @include('employees._kv', ['items' => [
             'Status Pegawai' => $employee->status_pegawai,
-            'Jenis BLUD' => $employee->bludCategory?->name,
-            'Kategori Pegawai' => $employee->employeeCategory?->name ?? $employee->employmentStatus?->name,
+            'Jenis Pekerjaan' => $employee->status_pegawai === 'Outsourcing' ? $employee->outsourcingJob?->name : null,
+            'Status Kerja' => $employee->employmentStatus?->name,
             'Jenis ASN' => $employee->jenis_asn,
             'Unit Kerja' => $employee->workUnit?->name,
             'Jabatan' => $employee->currentPosition?->name,
@@ -662,8 +662,8 @@
           <h3 class="section-title mb-4">Ringkasan Status</h3>
           @include('employees._kv', ['items' => [
             'Status Pegawai' => $employee->status_pegawai, 'Jenis ASN' => $employee->jenis_asn,
-        'Jenis BLUD' => $employee->bludCategory?->name,
-            'Kategori' => $employee->employeeCategory?->name, 'Status Kerja' => $employee->employmentStatus?->name,
+            'Jenis Pekerjaan' => $employee->status_pegawai === 'Outsourcing' ? $employee->outsourcingJob?->name : null,
+            'Status Kerja' => $employee->employmentStatus?->name,
             'Tugas Tambahan' => $employee->tugas_tambahan_1 ? trim($employee->tugas_tambahan_1 . (optional($employee->tmt_tugas_tambahan_1)->format('d M Y') ? ' · TMT ' . $employee->tmt_tugas_tambahan_1->format('d M Y') : '')) : null,
             'Gaji Pokok' => $employee->gaji_pokok ? ($isSA ? 'Rp ' . number_format($employee->gaji_pokok, 0, ',', '.') : (auth()->user()->role === 'admin' ? 'Rp ' . number_format($employee->gaji_pokok, 0, ',', '.') : 'Rp ••••')) : null,
           ]])

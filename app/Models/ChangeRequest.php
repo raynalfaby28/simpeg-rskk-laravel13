@@ -42,6 +42,11 @@ class ChangeRequest extends Model
     {
         $this->employee->update($this->new_data);
 
+        $this->markApproved($approver);
+    }
+
+    public function markApproved(User $approver): void
+    {
         $this->update([
             'status' => 'approved',
             'approved_by' => $approver->id,

@@ -138,26 +138,17 @@
         <label class="flabel">Status Pegawai</label>
         <select name="status_pegawai" class="input">
           <option value="">Pilih</option>
-          @foreach(['PNS', 'PPPK', 'Honorer', 'Kontrak', 'BLUD', 'Lainnya'] as $sp)
+          @foreach(['PNS', 'PPPK', 'Honorer', 'Kontrak', 'Outsourcing'] as $sp)
             <option value="{{ $sp }}" @selected($employee->status_pegawai === $sp)>{{ $sp }}</option>
           @endforeach
         </select>
       </div>
       <div>
-        <label class="flabel">Jenis BLUD</label>
-        <select name="blud_category_id" class="input" {{ old('status_pegawai', $employee->status_pegawai) === 'BLUD' ? 'required' : '' }}>
+        <label class="flabel">Jenis Pekerjaan (Outsourcing)</label>
+        <select name="outsourcing_job_id" class="input">
           <option value="">Pilih</option>
-          @foreach ($bludCategories as $bc)
-            <option value="{{ $bc->id }}" @selected(old('blud_category_id', $employee->blud_category_id) == $bc->id)>{{ $bc->name }}</option>
-          @endforeach
-        </select>
-      </div>
-      <div>
-        <label class="flabel">Kategori Pegawai</label>
-        <select name="employee_category_id" class="input">
-          <option value="">Pilih</option>
-          @foreach ($employeeCategories as $cat)
-            <option value="{{ $cat->id }}" @selected(old('employee_category_id', $employee->employee_category_id) == $cat->id)>{{ $cat->name }}</option>
+          @foreach ($outsourcingJobs as $oj)
+            <option value="{{ $oj->id }}" @selected(old('outsourcing_job_id', $employee->outsourcing_job_id) == $oj->id)>{{ $oj->name }}</option>
           @endforeach
         </select>
       </div>
@@ -232,8 +223,12 @@
         <label class="flabel">Jabatan Saat Ini @if($lockedJabatan)<span class="badge" style="background:var(--amber-50);color:var(--amber-600);border-color:var(--amber-100)">Dikunci</span>@endif</label>
         <select name="current_position_id" class="input" @disabled($lockedJabatan) @if($lockedJabatan) style="background:#F8FAFC;color:var(--ink-700)" @endif>
           <option value="">Pilih</option>
-          @foreach ($positions as $pos)
-            <option value="{{ $pos->id }}" @selected(old('current_position_id', $employee->current_position_id) == $pos->id)>{{ $pos->name }}</option>
+          @foreach (['struktural', 'fungsional', 'pelaksana', 'outsourcing'] as $jj)
+            <optgroup label="{{ ucfirst($jj) }}">
+              @foreach ($positions->where('type', $jj) as $pos)
+                <option value="{{ $pos->id }}" @selected(old('current_position_id', $employee->current_position_id) == $pos->id)>{{ $pos->name }}</option>
+              @endforeach
+            </optgroup>
           @endforeach
         </select>
         @if($lockedJabatan)
@@ -359,6 +354,19 @@
 
 <script>
 (function () {
+  var sp = document.querySelector('[name="status_pegawai"]');
+  var osSelect = document.querySelector('[name="outsourcing_job_id"]');
+  if (sp && osSelect) {
+    function syncStatus() {
+      var isOs = sp.value === 'Outsourcing';
+      osSelect.disabled = false;
+      osSelect.style.opacity = isOs ? '1' : '0.4';
+      if (!isOs) { osSelect.value = ''; }
+    }
+    sp.addEventListener('change', syncStatus);
+    syncStatus();
+  }
+
   var pairs = [
     ['alamat_rumah', 'alamat_domisili_ktp'],
     ['rt_rumah', 'rt_domisili'],

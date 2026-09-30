@@ -40,7 +40,6 @@ return new class extends Migration
             $table->enum('bapertarum', ['Sudah Diambil', 'Belum Diambil', 'Tidak Ada'])->nullable();
 
             // Status kepegawaian
-            $table->foreignId('employee_category_id')->nullable()->constrained('employee_categories')->nullOnDelete();
             $table->foreignId('employment_status_id')->nullable()->constrained('employment_statuses')->nullOnDelete();
             $table->enum('status_pegawai', ['PNS', 'PPPK', 'Honorer', 'Kontrak', 'Lainnya'])->nullable();
             $table->enum('jenis_asn', ['PNS', 'PPPK'])->nullable();

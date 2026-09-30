@@ -44,7 +44,7 @@
     <input type="hidden" name="status" value="{{ $status }}">
     <select name="module" class="input !w-auto !py-1.5 text-[12.5px]">
       <option value="">Semua Modul</option>
-      @foreach(['profil' => 'Data Pribadi', 'kepegawaian' => 'Kepegawaian', 'pendidikan' => 'Pendidikan', 'dokumen' => 'Dokumen'] as $v => $l)
+      @foreach(['profil' => 'Data Pribadi', 'kepegawaian' => 'Kepegawaian', 'pendidikan' => 'Pendidikan', 'dokumen' => 'Dokumen', 'mutasi' => 'Mutasi'] as $v => $l)
         <option value="{{ $v }}" @selected($module === $v)>{{ $l }}</option>
       @endforeach
     </select>

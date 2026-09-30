@@ -203,19 +203,24 @@
     @php
       $kpis = [
         ['Total Pegawai', $totals['pegawai'], '#2563EB', '#60A5FA',
-          '<path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.9M9 20H4v-2a4 4 0 013-3.9m6-1.6a4 4 0 100-8m6 2a4 4 0 11-8 0 4 4 0 018 0z"/>'],
-        ['Pegawai Aktif', $totals['aktif'], '#059669', '#34D399',
-          '<path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>'],
+          '<path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.9M9 20H4v-2a4 4 0 013-3.9m6-1.6a4 4 0 100-8m6 2a4 4 0 11-8 0 4 4 0 018 0z"/>',
+          route('employees.index')],
         ['Pegawai Nonaktif', $totals['nonaktif'], '#DC2626', '#F87171',
-          '<path stroke-linecap="round" stroke-linejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>'],
-        ['Baru 30 Hari', $totals['baru'], '#0D9488', '#2DD4BF',
-          '<path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zm-4 7a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6z"/>'],
+          '<path stroke-linecap="round" stroke-linejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>',
+          route('employees.index', ['status' => 'nonaktif'])],
+        ['Jumlah Pegawai BLUD', $totals['blud'], '#0D9488', '#2DD4BF',
+          '<path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>',
+          route('employees.index', ['status' => 'blud'])],
+        ['Jumlah Pegawai Outsourcing', $totals['outsourcing'], '#7C3AED', '#A78BFA',
+          '<path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>',
+          route('employees.index', ['status' => 'outsourcing'])],
         ['Menunggu Approval', $pendingApprovals, '#D97706', '#FBBF24',
-          '<path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>'],
+          '<path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>',
+          route('approvals.index')],
       ];
     @endphp
-    @foreach ($kpis as [$label, $val, $c1, $c2, $icon])
-      <div class="stat-card prem flex items-center gap-3.5 p-4" style="--c1:{{ $c1 }};--c2:{{ $c2 }}">
+    @foreach ($kpis as [$label, $val, $c1, $c2, $icon, $link])
+      <a href="{{ $link }}" class="stat-card prem flex items-center gap-3.5 p-4" style="--c1:{{ $c1 }};--c2:{{ $c2 }};text-decoration:none">
         <div class="stat-ic">
           <svg style="width:18px;height:18px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">{!! $icon !!}</svg>
         </div>
@@ -223,7 +228,7 @@
           <div class="stat-val text-[21px]" style="color:var(--c1)">{{ $val }}</div>
           <div class="text-[11px] font-medium truncate" style="color:var(--ink-500)">{{ $label }}</div>
         </div>
-      </div>
+      </a>
     @endforeach
   </div>
 
@@ -290,6 +295,55 @@
         </div>
       </div>
     </div>
+  </div>
+
+  {{-- Komposisi Status Pegawai (PNS/PPPK/Honorer/Kontrak = ruang lingkup BLUD; Outsourcing terpisah) --}}
+  @php
+    $spColors = ['#2563EB', '#0D9488', '#7C3AED', '#0EA5E9', '#F59E0B', '#F43F5E', '#64748B'];
+    $spData = $perJenis->toArray();
+    $spTotal = array_sum($spData) ?: 1;
+    $start2 = -90; $dStops2 = []; $dIdx2 = 0; $dLegend2 = [];
+    foreach ($spData as $k => $v) {
+        $deg = intval(round($v / $spTotal * 360));
+        $dLegend2[] = [$k, $v, $spColors[$dIdx2 % count($spColors)]];
+        if ($deg > 0) {
+            $dStops2[] = "{$spColors[$dIdx2 % count($spColors)]} {$start2}deg " . ($start2 + $deg) . 'deg';
+            $start2 += $deg;
+        }
+        $dIdx2++;
+    }
+    $conic2 = $dStops2 ? implode(', ', $dStops2) : '#E4E7EC 0deg 360deg';
+  @endphp
+  <div class="card p-6 mb-6">
+    <div class="flex flex-wrap items-start justify-between gap-4 mb-5">
+      <div>
+        <h3 class="section-title mb-1">Komposisi Status Pegawai</h3>
+        <p class="text-[11.5px]" style="color:var(--ink-500)">Kategori dari kolom <b>Status Pegawai</b> di Data Pegawai. PNS, PPPK, Honorer, dan Kontrak termasuk <b>ruang lingkup BLUD</b>; Outsourcing (Security, Cleaning Service, dll) dihitung terpisah. Kartu <b>Jumlah Pegawai BLUD</b> di atas = jumlah PNS + PPPK + Honorer + Kontrak.</p>
+      </div>
+      <span class="badge" style="background:var(--blue-50); color:var(--blue-700); border-color:var(--blue-100)">{{ $spTotal }} pegawai</span>
+    </div>
+    @if($perJenis->isEmpty())
+      <div class="empty-state"><p class="text-[12.5px]">Belum ada data pegawai.</p></div>
+    @else
+      <div class="flex flex-col lg:flex-row items-center gap-8">
+        <div class="relative w-[170px] h-[170px] rounded-full donut flex-none" style="background:conic-gradient({{ $conic2 }}); box-shadow:inset 0 0 0 1px var(--line-soft)">
+          <div class="absolute inset-[26px] rounded-full flex flex-col items-center justify-center" style="background:#fff">
+            <div class="text-[26px] font-bold leading-none" style="color:var(--navy-900)">{{ $spTotal }}</div>
+            <div class="text-[10.5px] font-medium mt-1" style="color:var(--ink-500)">Total Pegawai</div>
+          </div>
+        </div>
+        <div class="w-full grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
+          @foreach ($dLegend2 as [$name, $count, $color])
+            <div class="flex items-center gap-2.5 text-[12px]">
+              <span class="w-2.5 h-2.5 rounded-full flex-none" style="background:{{ $color }}"></span>
+              <span class="truncate flex-1" style="color:var(--ink-700)">{{ $name }}</span>
+              <span class="font-semibold" style="color:var(--ink-900)">{{ $count }}</span>
+              <span class="w-10 text-right font-medium" style="color:var(--ink-300)">{{ $spTotal ? round($count / $spTotal * 100) : 0 }}%</span>
+            </div>
+          @endforeach
+        </div>
+      </div>
+    @endif
   </div>
 
   {{-- Grafik Row 2: Pendidikan + Golongan --}}

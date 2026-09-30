@@ -12,7 +12,7 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     protected $fillable = [
-        'nip', 'name', 'email', 'password', 'password_cipher', 'role', 'is_active', 'last_login_at',
+        'nip', 'name', 'email', 'password', 'password_cipher', 'role', 'is_active', 'last_login_at', 'last_activity_at',
     ];
 
     protected $hidden = ['password', 'password_cipher', 'remember_token'];
@@ -22,6 +22,7 @@ class User extends Authenticatable
         return [
             'is_active' => 'boolean',
             'last_login_at' => 'datetime',
+            'last_activity_at' => 'datetime',
             'password' => 'hashed',
         ];
     }

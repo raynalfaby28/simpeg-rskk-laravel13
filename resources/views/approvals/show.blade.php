@@ -24,6 +24,15 @@
   </div>
 </div>
 
+@if($request->module_type === 'mutasi')
+  @php $op = ['create' => 'pencatatan baru', 'update' => 'perubahan data', 'delete' => 'penghapusan data'][$request->new_data['_mutation_operation'] ?? 'create'] ?? 'pencatatan baru'; @endphp
+  <div class="card p-5 mb-5 text-[13px]" style="background:var(--blue-50); border:1px solid var(--blue-100); color:var(--blue-800)">
+    Pengajuan <strong>{{ $op === 'penghapusan data' ? 'penghapusan Riwayat Mutasi' : 'perubahan Riwayat Mutasi (' . $op . ')' }}</strong>.
+    Jika disetujui, mutasi {{ $op === 'penghapusan data' ? 'dihapus dari riwayat pegawai' : 'dicatat pada riwayat pegawai' }}
+    dan <strong>Jabatan &amp; Unit Kerja</strong> pegawai diperbarui otomatis. Penolakan membuang berkas lampiran sementara dari pengajuan ini.
+  </div>
+@endif
+
 <div class="card p-6 mb-5">
   <h3 class="text-[11px] font-bold tracking-wider mb-4" style="color:var(--blue-600); text-transform:uppercase">Perbandingan Data</h3>
   <div class="overflow-x-auto">
@@ -37,6 +46,7 @@
       </thead>
       <tbody>
         @foreach($request->new_data as $field => $newValue)
+          @if(str_starts_with($field, '_')) @continue @endif
           @php $oldValue = $request->old_data[$field] ?? null; $changed = $oldValue != $newValue; @endphp
           <tr class="row-line">
             <td class="table-td font-medium capitalize">{{ str_replace('_', ' ', $field) }}</td>

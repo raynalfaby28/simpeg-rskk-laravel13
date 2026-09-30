@@ -6,8 +6,8 @@ use App\Models\AuditLog;
 use App\Models\BludCategory;
 use App\Models\EducationLevel;
 use App\Models\Employee;
-use App\Models\EmployeeCategory;
 use App\Models\EmploymentStatus;
+use App\Models\OutsourcingJob;
 use App\Models\Position;
 use App\Models\PositionType;
 use App\Models\Rank;
@@ -20,7 +20,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Arr;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -31,7 +30,9 @@ class EmployeeController extends Controller
      */
     public function index(Request $request): View
     {
-        $query = Employee::with(['currentPosition', 'workUnit', 'employmentStatus', 'golonganAkhir'])->latest();
+        $query = Employee::with(['currentPosition', 'workUnit', 'employmentStatus', 'golonganAkhir', 'user'])->latest();
+
+        $onlineIds = $this->onlineUserIds();
 
         if ($search = $request->get('q')) {
             $query->where(function ($q) use ($search) {
@@ -56,14 +57,20 @@ class EmployeeController extends Controller
             $query->where('golongan_akhir_id', $rank);
         }
 
-        // Filter cepat: semua / aktif / nonaktif / baru
+        // Filter cepat: semua / online (presence) / nonaktif / baru / BLUD / outsourcing
         if ($filter = $request->get('status')) {
-            if ($filter === 'aktif') {
+            if ($filter === 'online') {
+                $query->whereIn('user_id', $onlineIds);
+            } elseif ($filter === 'aktif') {
                 $query->where('status_aktif', true);
             } elseif ($filter === 'nonaktif') {
                 $query->where('status_aktif', false);
             } elseif ($filter === 'baru') {
                 $query->where('created_at', '>=', now()->subDays(30));
+            } elseif ($filter === 'blud') {
+                $query->whereIn('status_pegawai', ['PNS', 'PPPK', 'Honorer', 'Kontrak', 'BLUD']);
+            } elseif ($filter === 'outsourcing') {
+                $query->where('status_pegawai', 'Outsourcing');
             }
         }
 
@@ -75,16 +82,27 @@ class EmployeeController extends Controller
 
         $totals = [
             'semua' => Employee::count(),
+            'online' => Employee::whereIn('user_id', $onlineIds)->count(),
             'aktif' => Employee::where('status_aktif', true)->count(),
             'nonaktif' => Employee::where('status_aktif', false)->count(),
             'baru' => Employee::where('created_at', '>=', now()->subDays(30))->count(),
+            'blud' => Employee::whereIn('status_pegawai', ['PNS', 'PPPK', 'Honorer', 'Kontrak', 'BLUD'])->count(),
+            'outsourcing' => Employee::where('status_pegawai', 'Outsourcing')->count(),
         ];
 
         $workUnits = WorkUnit::orderBy('name')->get(['id', 'name']);
         $positions = Position::orderBy('name')->get(['id', 'name']);
         $ranks = Rank::orderBy('urutan')->get(['id', 'golongan', 'pangkat']);
 
-        return view('employees.index', compact('employees', 'totals', 'workUnits', 'positions', 'ranks'));
+        return view('employees.index', compact('employees', 'totals', 'workUnits', 'positions', 'ranks', 'onlineIds'));
+    }
+
+    /**
+     * ID user yang dianggap sedang online (aktivitas dalam 5 menit ke belakang).
+     */
+    private function onlineUserIds(): \Illuminate\Support\Collection
+    {
+        return User::where('last_activity_at', '>=', now()->subMinutes(5))->pluck('id');
     }
 
     public function searchJson(Request $request): JsonResponse
@@ -140,7 +158,9 @@ class EmployeeController extends Controller
         }
 
         if ($filter = $request->get('status')) {
-            if ($filter === 'aktif') {
+            if ($filter === 'online') {
+                $query->whereIn('user_id', $this->onlineUserIds());
+            } elseif ($filter === 'aktif') {
                 $query->where('status_aktif', true);
             } elseif ($filter === 'nonaktif') {
                 $query->where('status_aktif', false);
@@ -186,7 +206,7 @@ class EmployeeController extends Controller
         $this->authorize('view', $employee);
 
         $employee->load([
-            'currentPosition', 'workUnit', 'employmentStatus', 'employeeCategory',
+            'currentPosition', 'workUnit', 'employmentStatus',
             'golonganAwal', 'golonganAkhir', 'pendidikanAkhir',
             'educations.educationLevel',
             'positionHistories.position', 'positionHistories.workUnit',
@@ -212,22 +232,22 @@ class EmployeeController extends Controller
 
         $employee->load([
             'workUnit', 'currentPosition', 'golonganAwal', 'golonganAkhir',
-            'employeeCategory', 'employmentStatus', 'pendidikanAwal', 'pendidikanAkhir',
+            'employmentStatus', 'pendidikanAwal', 'pendidikanAkhir',
         ]);
 
         $workUnits = WorkUnit::orderBy('name')->get();
         $positions = Position::orderBy('name')->get();
         $ranks = Rank::orderBy('urutan')->get();
         $educationLevels = EducationLevel::orderBy('urutan')->get();
-        $employeeCategories = EmployeeCategory::orderBy('name')->get();
         $employmentStatuses = EmploymentStatus::orderBy('name')->get();
         $bludCategories = BludCategory::orderBy('name')->get();
         $positionTypes = PositionType::where('is_active', true)->orderBy('name')->get(['code', 'name']);
+        $outsourcingJobs = OutsourcingJob::orderBy('name')->get();
 
         return view('employees.edit', compact(
             'employee', 'workUnits', 'positions', 'ranks',
-            'educationLevels', 'employeeCategories', 'employmentStatuses',
-            'bludCategories', 'positionTypes'
+            'educationLevels', 'employmentStatuses',
+            'bludCategories', 'positionTypes', 'outsourcingJobs'
         ));
     }
 
@@ -310,7 +330,15 @@ class EmployeeController extends Controller
      */
     public function create(): View
     {
-        return view('employees.create');
+        $workUnits = WorkUnit::orderBy('name')->get();
+        $positions = Position::orderBy('name')->get();
+        $bludCategories = BludCategory::orderBy('name')->get();
+        $employmentStatuses = EmploymentStatus::orderBy('name')->get();
+        $outsourcingJobs = OutsourcingJob::orderBy('name')->get();
+
+        return view('employees.create', compact(
+            'workUnits', 'positions', 'bludCategories', 'employmentStatuses', 'outsourcingJobs'
+        ));
     }
 
     public function store(Request $request)
@@ -361,9 +389,9 @@ class EmployeeController extends Controller
             $role = 'user';
         }
 
-        try {
-            $employee = Employee::create($data);
+        $user = null;
 
+        try {
             // Akun login dibuat otomatis: username = NIP, password bawaan.
             $user = User::create([
                 'nip' => $data['nip'],
@@ -374,8 +402,12 @@ class EmployeeController extends Controller
                 'is_active' => true,
             ]);
 
-            $employee->update(['user_id' => $user->id]);
+            $employee = Employee::create($data + ['user_id' => $user->id]);
         } catch (QueryException $e) {
+            if ($user?->exists) {
+                $user->delete();
+            }
+
             return back()
                 ->withInput()
                 ->withErrors([
@@ -503,12 +535,8 @@ class EmployeeController extends Controller
             'bapertarum' => ['nullable', 'in:Sudah Diambil,Belum Diambil,Tidak Ada'],
 
             // Status kepegawaian
-            'status_pegawai' => ['nullable', 'in:PNS,PPPK,Honorer,Kontrak,BLUD,Lainnya'],
-            'blud_category_id' => [
-                'nullable', 'exists:blud_categories,id',
-                Rule::requiredIf(fn () => request()->input('status_pegawai') === 'BLUD'),
-            ],
-            'employee_category_id' => ['nullable', 'exists:employee_categories,id'],
+            'status_pegawai' => ['nullable', 'in:PNS,PPPK,Honorer,Kontrak,Outsourcing'],
+            'outsourcing_job_id' => ['nullable', 'exists:outsourcing_jobs,id'],
             'employment_status_id' => ['nullable', 'exists:employment_statuses,id'],
 
             // Pendidikan ringkas

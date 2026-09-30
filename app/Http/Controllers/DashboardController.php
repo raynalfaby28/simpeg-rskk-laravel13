@@ -65,6 +65,8 @@ $notifications = $user->appNotifications()->latest()->limit(5)->get();
             'aktif' => Employee::where('status_aktif', true)->count(),
             'nonaktif' => Employee::where('status_aktif', false)->count(),
             'baru' => Employee::where('created_at', '>=', now()->subDays(30))->count(),
+            'outsourcing' => Employee::where('status_pegawai', 'Outsourcing')->count(),
+            'blud' => Employee::whereIn('status_pegawai', ['PNS', 'PPPK', 'Honorer', 'Kontrak', 'BLUD'])->count(),
         ];
 
         $pendingApprovals = ChangeRequest::pending()->count();
@@ -101,9 +103,8 @@ $notifications = $user->appNotifications()->latest()->limit(5)->get();
             ->sortDesc()
             ->take(6);
 
-        $perJenis = Employee::with('employeeCategory')
-            ->get()
-            ->groupBy(fn ($e) => $e->employeeCategory?->name ?? 'Tanpa Kategori')
+        $perJenis = Employee::get()
+            ->groupBy(fn ($e) => $e->status_pegawai ?: 'Belum Diisi')
             ->map->count()
             ->sortDesc()
             ->take(6);

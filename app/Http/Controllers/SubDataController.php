@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\{
-    AuditLog, AssetType, Employee, EmployeeAsset, EmployeeAward, EmployeeCreditScore, EmployeeDiscipline,
+    AuditLog, AssetType, ChangeRequest, Employee, EmployeeAsset, EmployeeAward, EmployeeCreditScore, EmployeeDiscipline,
     EmployeeDisease, EmployeeEducation, EmployeeEmergencyContact, EmployeeFamily,
     EmployeeInactivePeriod, EmployeeIpasn, EmployeeLanguage, EmployeeLeave,
     EmployeeLegalStatus, EmployeeMutation, EmployeePerformance, EmployeePmkHistory,
@@ -11,7 +11,9 @@ use App\Models\{
     EmployeeSalaryHistory, EmployeeSkp, EmployeeTraining,
     EducationLevel, Position, Rank, WorkUnit,
     AwardType, DiklatType, EducationType,
+    Notification, User,
 };
+use App\Services\MutationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -401,11 +403,21 @@ class SubDataController extends Controller
             }
         }
 
+        // Riwayat Mutasi milik role user tidak langsung tercatat. Pegawai mengajukan
+        // perubahan terlebih dahulu; baru disetujui Super Admin/Admin data mutasi
+        // diterapkan ke employee_mutations dan jabatan/unit kerja diperbarui.
+        if ($type === 'mutasi' && $request->user()->role === 'user') {
+            $empty = collect($conf['fields'])->mapWithKeys(fn ($f, $k) => [$k => null])->all();
+            $this->submitMutationRequest($employee, $data, 'create', null, $empty);
+
+            return $this->redirectAfterSave($conf, $employee, 'Pengajuan ' . $conf['label'] . ' terkirim, menunggu persetujuan Admin/Super Admin.');
+        }
+
         $model = $conf['model']::create($data);
         AuditLog::record('create', $conf['module'], $model, 'Tambah ' . $conf['label'] . ' untuk ' . $employee->nama_lengkap);
 
         if ($type === 'mutasi') {
-            $this->syncFromMutation($employee, $model);
+            app(MutationService::class)->syncFromMutation($employee, $model);
         }
 
         return $this->redirectAfterSave($conf, $employee, $conf['label'] . ' berhasil ditambahkan.');
@@ -432,26 +444,37 @@ class SubDataController extends Controller
         $row = $conf['model']::where('employee_id', $employee->id)->findOrFail($id);
         $request->validate($this->rulesFor($conf));
 
+        $pending = $type === 'mutasi' && $request->user()->role === 'user';
+
+        $newData = [];
         foreach (array_keys($conf['fields']) as $field) {
             $f = $conf['fields'][$field];
             if ($f['type'] === 'file') {
                 if ($path = $this->storeFile($request, $field)) {
-                    if ($row->{$field}) {
+                    if (!$pending && $row->{$field}) {
                         Storage::disk('public')->delete($row->{$field});
                     }
-                    $row->{$field} = $path;
+                    $newData[$field] = $path;
                 }
             } elseif ($f['type'] === 'checkbox') {
-                $row->{$field} = $request->boolean($field);
+                $newData[$field] = $request->boolean($field);
             } else {
-                $row->{$field} = $request->filled($field) ? $request->input($field) : null;
+                $newData[$field] = $request->filled($field) ? $request->input($field) : null;
             }
         }
+
+        if ($pending) {
+            $this->submitMutationRequest($employee, $newData, 'update', $row->id, $row->only(array_keys($conf['fields'])));
+
+            return $this->redirectAfterSave($conf, $employee, 'Pengajuan perubahan ' . $conf['label'] . ' terkirim, menunggu persetujuan Admin/Super Admin.');
+        }
+
+        $row->fill($newData);
         $row->save();
 
         AuditLog::record('update', $conf['module'], $row, 'Ubah ' . $conf['label'] . ' milik ' . $employee->nama_lengkap);
         if ($type === 'mutasi') {
-            $this->syncFromMutation($employee, $row);
+            app(MutationService::class)->syncFromMutation($employee, $row);
         }
         return $this->redirectAfterSave($conf, $employee, $conf['label'] . ' berhasil diperbarui.');
     }
@@ -461,6 +484,13 @@ class SubDataController extends Controller
         $this->authorizeAccess($employee);
         [$conf] = $this->resolve($type);
         $row = $conf['model']::where('employee_id', $employee->id)->findOrFail($id);
+
+        if ($type === 'mutasi' && request()->user()->role === 'user') {
+            $this->submitMutationRequest($employee, $row->only(array_keys($conf['fields'])), 'delete', $row->id, $row->only(array_keys($conf['fields'])));
+
+            return $this->redirectAfterSave($conf, $employee, 'Pengajuan penghapusan ' . $conf['label'] . ' terkirim, menunggu persetujuan Admin/Super Admin.');
+        }
+
         foreach (array_keys($conf['fields']) as $field) {
             if (($conf['fields'][$field]['type'] ?? null) === 'file' && $row->{$field}) {
                 Storage::disk('public')->delete($row->{$field});
@@ -499,35 +529,39 @@ class SubDataController extends Controller
     }
 
     /**
-     * Riwayat Mutasi = sumber kebenaran jabatan & unit kerja pegawai.
-     * Simpan/ubah baris mutasi ikut memperbarui jabatan dan unit kerja saat ini
-     * pada profil pegawai (tampil di dashboard, ringkasan status, dan daftar pegawai).
+     * Riwayat Mutasi milik role user selalu lewat alur persetujuan (Approval Center).
+     * Data mutasi disimpan dulu di change_requests (status pending); baru diterapkan
+     * ke employee_mutations setelah disetujui Super Admin/Admin.
      */
-    private function syncFromMutation(Employee $employee, EmployeeMutation $mutation): void
+    private function submitMutationRequest(Employee $employee, array $newData, string $operation, ?int $mutationId, array $oldData): void
     {
-        $dirty = false;
+        $requestObj = ChangeRequest::create([
+            'employee_id' => $employee->id,
+            'module_type' => 'mutasi',
+            'old_data' => $oldData,
+            'new_data' => $newData + ['_mutation_operation' => $operation] + ($operation === 'create' ? [] : ['_mutation_id' => $mutationId]),
+            'status' => 'pending',
+        ]);
 
-        if (filled($mutation->jabatan_baru)) {
-            $position = Position::where('name', $mutation->jabatan_baru)->first();
-            if ($position && $employee->current_position_id !== $position->id) {
-                $employee->current_position_id = $position->id;
-                $dirty = true;
-            }
+        $recipients = User::whereIn('role', ['super_admin', 'admin'])
+            ->where('id', '!=', request()->user()->id)
+            ->pluck('id');
+
+        foreach ($recipients as $recipientId) {
+            Notification::send(
+                userId: $recipientId,
+                title: 'Ada pengajuan perubahan Riwayat Mutasi',
+                body: $employee->nama_lengkap . ' mengajukan perubahan Riwayat Mutasi.',
+                url: route('approvals.show', $requestObj),
+            );
         }
 
-        if (filled($mutation->unit_tujuan_id)) {
-            $unitId = (int) $mutation->unit_tujuan_id;
-            if ($employee->work_unit_id !== $unitId) {
-                $employee->work_unit_id = $unitId;
-                $dirty = true;
-            }
-        }
-
-        if ($dirty) {
-            $employee->save();
-            AuditLog::record('update', 'Kepegawaian', $employee,
-                'Jabatan/Unit Kerja diperbarui otomatis dari Riwayat Mutasi untuk ' . $employee->nama_lengkap);
-        }
+        AuditLog::record(
+            action: 'request',
+            module: 'Mutasi',
+            reference: $requestObj,
+            description: 'Pegawai ' . $employee->nama_lengkap . ' mengajukan perubahan Riwayat Mutasi ('. $operation .').',
+        );
     }
 
     private function redirectAfterSave(array $conf, Employee $employee, string $message): \Illuminate\Http\RedirectResponse

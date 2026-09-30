@@ -12,11 +12,11 @@ use App\Models\EducationLevel;
 use App\Models\EducationType;
 use App\Models\Employee;
 use App\Models\EmployeeAsset;
-use App\Models\EmployeeCategory;
 use App\Models\EmployeeType;
 use App\Models\EmploymentStatus;
 use App\Models\MasterItem;
 use App\Models\MasterType;
+use App\Models\OutsourcingJob;
 use App\Models\Position;
 use App\Models\PositionType;
 use App\Models\Rank;
@@ -212,10 +212,10 @@ class MasterDataController extends Controller
                 'columns' => ['name' => 'Nama Jabatan', 'type' => 'Jenis', 'eselon' => 'Eselon'],
                 'fields' => [
                     ['name' => 'name', 'label' => 'Nama Jabatan', 'type' => 'text', 'required' => true],
-                    ['name' => 'type', 'label' => 'Jenis', 'type' => 'enum', 'options' => ['struktural' => 'Struktural', 'fungsional' => 'Fungsional', 'pelaksana' => 'Pelaksana']],
+                    ['name' => 'type', 'label' => 'Jenis', 'type' => 'enum', 'options' => ['struktural' => 'Struktural', 'fungsional' => 'Fungsional', 'pelaksana' => 'Pelaksana', 'outsourcing' => 'Outsourcing']],
                     ['name' => 'eselon', 'label' => 'Eselon', 'type' => 'text'],
                 ],
-                'columns_label' => ['struktural' => 'Struktural', 'fungsional' => 'Fungsional', 'pelaksana' => 'Pelaksana'],
+                'columns_label' => ['struktural' => 'Struktural', 'fungsional' => 'Fungsional', 'pelaksana' => 'Pelaksana', 'outsourcing' => 'Outsourcing'],
                 'order' => 'name',
             ],
             'golongan' => [
@@ -228,15 +228,6 @@ class MasterDataController extends Controller
                     ['name' => 'urutan', 'label' => 'Urutan', 'type' => 'number'],
                 ],
                 'order' => 'urutan',
-            ],
-            'kategori' => [
-                'label' => 'Kategori Pegawai',
-                'model' => EmployeeCategory::class,
-                'columns' => ['name' => 'Nama Kategori'],
-                'fields' => [
-                    ['name' => 'name', 'label' => 'Nama Kategori', 'type' => 'text', 'required' => true],
-                ],
-                'order' => 'name',
             ],
             'pendidikan' => [
                 'label' => 'Jenjang Pendidikan',
@@ -263,6 +254,15 @@ class MasterDataController extends Controller
                 'columns' => ['name' => 'Nama Jenis BLUD'],
                 'fields' => [
                     ['name' => 'name', 'label' => 'Nama Jenis BLUD', 'type' => 'text', 'required' => true],
+                ],
+                'order' => 'name',
+            ],
+            'outsourcing' => [
+                'label' => 'Jenis Pekerjaan Outsourcing',
+                'model' => OutsourcingJob::class,
+                'columns' => ['name' => 'Nama Jenis Pekerjaan'],
+                'fields' => [
+                    ['name' => 'name', 'label' => 'Nama Jenis Pekerjaan', 'type' => 'text', 'required' => true],
                 ],
                 'order' => 'name',
             ],
@@ -513,10 +513,10 @@ class MasterDataController extends Controller
             'units' => $row->employees()->count() + $row->children()->count(),
             'jabatan' => Employee::where('current_position_id', $row->id)->count(),
             'golongan' => Employee::where('golongan_awal_id', $row->id)->orWhere('golongan_akhir_id', $row->id)->count(),
-            'kategori' => Employee::where('employee_category_id', $row->id)->count(),
             'pendidikan' => Employee::where('pendidikan_awal_id', $row->id)->orWhere('pendidikan_akhir_id', $row->id)->count(),
             'status' => Employee::where('employment_status_id', $row->id)->count(),
             'blud' => Employee::where('blud_category_id', $row->id)->count(),
+            'outsourcing' => Employee::where('outsourcing_job_id', $row->id)->count(),
             'aset' => EmployeeAsset::where('asset_type_id', $row->id)->count(),
             default => 0,
         };

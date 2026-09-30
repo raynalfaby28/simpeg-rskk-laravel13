@@ -35,13 +35,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Master: Kategori Pegawai
-        Schema::create('employee_categories', function (Blueprint $table) {
-            $table->id();
-            $table->string('name'); // Tetap, Kontrak, PPPK, dll
-            $table->timestamps();
-        });
-
         // Master: Jenjang Pendidikan
         Schema::create('education_levels', function (Blueprint $table) {
             $table->id();
@@ -62,7 +55,6 @@ return new class extends Migration
     {
         Schema::dropIfExists('employment_statuses');
         Schema::dropIfExists('education_levels');
-        Schema::dropIfExists('employee_categories');
         Schema::dropIfExists('ranks');
         Schema::dropIfExists('positions');
         Schema::dropIfExists('work_units');

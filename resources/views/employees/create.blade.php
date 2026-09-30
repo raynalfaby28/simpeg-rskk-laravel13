@@ -62,6 +62,33 @@
       <div class="md:col-span-2">
         @include('employees._field', ['name' => 'nik', 'label' => 'NIK / No. KTP', 'help' => 'Bila diisi, NIK tidak boleh sama dengan pegawai lain.'])
       </div>
+      <div class="md:col-span-2">
+        <div class="text-[13px] font-semibold mb-3" style="color:var(--ink-700)">Penempatan</div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="flabel">Jabatan Saat Ini</label>
+            <select id="current_position_id" name="current_position_id" class="input">
+              <option value="">Pilih Jabatan</option>
+              @foreach (['struktural', 'fungsional', 'pelaksana', 'outsourcing'] as $jj)
+                <optgroup label="{{ ucfirst($jj) }}">
+                  @foreach ($positions->where('type', $jj) as $pos)
+                    <option value="{{ $pos->id }}" @selected(old('current_position_id') == $pos->id)>{{ $pos->name }}</option>
+                  @endforeach
+                </optgroup>
+              @endforeach
+            </select>
+          </div>
+          <div>
+            <label class="flabel">Unit Kerja</label>
+            <select id="work_unit_id" name="work_unit_id" class="input">
+              <option value="">Pilih Unit Kerja</option>
+              @foreach ($workUnits as $wu)
+                <option value="{{ $wu->id }}" @selected(old('work_unit_id') == $wu->id)>{{ $wu->name }}</option>
+              @endforeach
+            </select>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="mt-5 p-4 rounded-xl" style="background:var(--blue-50); border:1px solid var(--blue-100)">
@@ -72,7 +99,44 @@
     </div>
   </div>
 
-  {{-- ===== Card 2: Role Akun (terpisah) ===== --}}
+  {{-- ===== Card 2: Status Kepegawaian ===== --}}
+  <div class="card p-6 mb-5 max-w-3xl">
+    <div class="mb-4">
+      <h3 class="section-title mb-1">Status Kepegawaian</h3>
+      <p class="text-[12px]" style="color:var(--ink-500)">Status PNS, PPPK, Honorer, Kontrak termasuk ruang lingkup pegawai BLUD; untuk Outsourcing pilih Jenis Pekerjaannya.</p>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div>
+        <label class="flabel">Status Pegawai</label>
+        <select id="status_pegawai" name="status_pegawai" class="input">
+          <option value="">Pilih</option>
+          @foreach(['PNS', 'PPPK', 'Honorer', 'Kontrak', 'Outsourcing'] as $sp)
+            <option value="{{ $sp }}" @selected(old('status_pegawai') === $sp)>{{ $sp }}</option>
+          @endforeach
+        </select>
+      </div>
+      <div id="os-wrap">
+        <label class="flabel">Jenis Pekerjaan (Outsourcing)</label>
+        <select name="outsourcing_job_id" class="input">
+          <option value="">Pilih</option>
+          @foreach ($outsourcingJobs as $oj)
+            <option value="{{ $oj->id }}" @selected(old('outsourcing_job_id') == $oj->id)>{{ $oj->name }}</option>
+          @endforeach
+        </select>
+      </div>
+      <div>
+        <label class="flabel">Status Kerja</label>
+        <select name="employment_status_id" class="input">
+          <option value="">Pilih</option>
+          @foreach ($employmentStatuses as $es)
+            <option value="{{ $es->id }}" @selected(old('employment_status_id') == $es->id)>{{ $es->name }}</option>
+          @endforeach
+        </select>
+      </div>
+    </div>
+  </div>
+
+  {{-- ===== Card 3: Role Akun (terpisah) ===== --}}
   <div class="card p-6 mb-5 max-w-3xl">
     <div class="mb-4">
       <h3 class="section-title mb-1">Role Akun</h3>
@@ -147,6 +211,16 @@
 
     opts.forEach(function(o){ o.addEventListener('click', function(){ setTimeout(sync, 0); }); });
     sync();
+
+    var sp = document.getElementById('status_pegawai');
+    var osWrap = document.getElementById('os-wrap');
+    var osSelect = osWrap.querySelector('select');
+    function syncBlud(){
+      var isOs = sp.value === 'Outsourcing';
+      osWrap.style.opacity = isOs ? '1' : '0.35';
+      if (!isOs) { osSelect.value = ''; }
+    }
+    if (sp) { sp.addEventListener('change', syncBlud); syncBlud(); }
   })();
 </script>
 
