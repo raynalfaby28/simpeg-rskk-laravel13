@@ -1,9 +1,10 @@
 @php
   $__loginApp = trim((string) App\Models\Settings::get('app_name', '')) ?: 'SIMPEG RSKK';
   $__loginTag = trim((string) App\Models\Settings::get('app_tagline', '')) ?: 'Sistem Informasi Manajemen Kepegawaian';
+  $__loginTheme = App\Models\Settings::get('app_theme', 'light');
 @endphp
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-theme="{{ $__loginTheme === 'dark' ? 'dark' : 'light' }}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -291,6 +292,48 @@
     .input-group { height: 46px; }
     .login-footer { padding: 14px 16px 18px; font-size: 11.5px; }
   }
+
+  /* ===== Tema gelap (mengikuti pengaturan Super Admin) ===== */
+  [data-theme="dark"] body{
+    background:
+      radial-gradient(55% 45% at 6% 4%, rgba(37,99,235,.15), transparent 62%),
+      radial-gradient(45% 40% at 96% 96%, rgba(56,189,248,.12), transparent 60%),
+      linear-gradient(180deg, #0D1321, #0A101C);
+  }
+  [data-theme="dark"] .illust{
+    background:
+      radial-gradient(120% 130% at 100% 0%, rgba(37,99,235,.16) 0%, transparent 55%),
+      linear-gradient(128deg, #111B30 0%, #0E1626 48%, #0C1422 100%);
+    border-color: rgba(148,163,184,.18);
+  }
+  [data-theme="dark"] .illust-wrap::before{
+    background: radial-gradient(circle, rgba(59,130,246,.28), rgba(37,99,235,.12) 55%, transparent 72%);
+  }
+  [data-theme="dark"] .ph-empty{ background: rgba(13,19,33,.7); color:#8C99B0; }
+  [data-theme="dark"] .ill-chip{ background: rgba(20,28,44,.9); border-color: rgba(148,163,184,.16);
+    box-shadow:0 16px 32px -14px rgba(0,0,0,.5), 0 0 0 1px rgba(148,163,184,.12); }
+  [data-theme="dark"] .ill-chip .tt{ color:#E7ECF5; }
+  [data-theme="dark"] .ill-chip .st{ color:#8C99B0; }
+
+  [data-theme="dark"] .mob-brand .mb-sub{ color:#8C99B0; }
+
+  [data-theme="dark"] .login-card{
+    background: rgba(20,28,44,.94);
+    box-shadow: 0 26px 64px -30px rgba(0,0,0,.6), 0 0 0 1px rgba(148,163,184,.12);
+  }
+  [data-theme="dark"] .login-card:hover{ box-shadow: 0 34px 74px -30px rgba(0,0,0,.65), 0 0 0 1px rgba(148,163,184,.16); }
+  [data-theme="dark"] .card-head .ch-sub, [data-theme="dark"] .card-head .ch-welcome p{ color:#8C99B0; }
+  [data-theme="dark"] .card-head .ch-welcome h2{ color:#E7ECF5; }
+  [data-theme="dark"] .login-input{ background:#0D1321; border-color:#242F42; color:#E7ECF5; }
+  [data-theme="dark"] .login-input::placeholder{ color:#5B6880; }
+  [data-theme="dark"] .input-icon{ background:#0D1321; border-color:#242F42; color:#6E7C96; }
+  [data-theme="dark"] .input-group:focus-within .input-icon{ background:#16233F; color:#60A5FA; border-color:#3B82F6; }
+  [data-theme="dark"] .field .flabel{ color:#C6CEDD; }
+  [data-theme="dark"] .eye-btn{ color:#6E7C96; }
+  [data-theme="dark"] .alert-error{ background:#311A1A; border-color:#5B2626; color:#FCA5A5; }
+  [data-theme="dark"] .login-note{ color:#5B6880; }
+  [data-theme="dark"] .login-note strong{ color:#C6CEDD; }
+  [data-theme="dark"] .login-footer{ color:#5B6880; }
 </style>
 </head>
 <body>

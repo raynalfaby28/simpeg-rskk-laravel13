@@ -106,7 +106,7 @@
     <aside class="grid gap-5">
       <div class="card p-6" style="background:var(--blue-50);border-color:var(--blue-100)">
         <div class="flex items-center gap-3 mb-3">
-          <span class="w-10 h-10 rounded-xl flex items-center justify-center flex-none" style="background:#fff;color:var(--blue-600);box-shadow:var(--shadow-sm)">
+          <span class="w-10 h-10 rounded-xl flex items-center justify-center flex-none" style="background:var(--surface);color:var(--blue-600);box-shadow:var(--shadow-sm)">
             <svg style="width:19px;height:19px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.6-3.6A2 2 0 0019 5H5a2 2 0 00-2 2v8a2 2 0 002 2h11.7l2.7 2.7v-12z"/></svg>
           </span>
           <h3 class="text-[15px] font-bold" style="color:var(--navy-900)">Jaga Keamanan Akun Anda</h3>

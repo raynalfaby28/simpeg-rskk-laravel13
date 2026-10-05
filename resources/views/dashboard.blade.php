@@ -86,9 +86,9 @@
       @if($employee)
         <div class="flex items-center gap-4 mb-4">
           @if($employee->foto_path)
-          <img src="{{ asset('storage/' . $employee->foto_path) }}" class="avatar w-14 h-14" style="--ring:#60A5FA; box-shadow:0 0 0 3px #fff, 0 0 0 5px rgba(37,99,235,.25)" alt="{{ $employee->nama_lengkap }}" onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name={{ urlencode($employee->nama_lengkap) }}&background=2563EB&color=fff&size=96'">
+          <img src="{{ asset('storage/' . $employee->foto_path) }}" class="avatar w-14 h-14" style="--ring:#60A5FA; box-shadow:0 0 0 3px var(--surface), 0 0 0 5px rgba(37,99,235,.25)" alt="{{ $employee->nama_lengkap }}" onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name={{ urlencode($employee->nama_lengkap) }}&background=2563EB&color=fff&size=96'">
         @else
-          <img src="https://ui-avatars.com/api/?name={{ urlencode($employee->nama_lengkap) }}&background=2563EB&color=fff&size=96" class="avatar w-14 h-14" style="--ring:#60A5FA; box-shadow:0 0 0 3px #fff, 0 0 0 5px rgba(37,99,235,.25)" alt="{{ $employee->nama_lengkap }}">
+          <img src="https://ui-avatars.com/api/?name={{ urlencode($employee->nama_lengkap) }}&background=2563EB&color=fff&size=96" class="avatar w-14 h-14" style="--ring:#60A5FA; box-shadow:0 0 0 3px var(--surface), 0 0 0 5px rgba(37,99,235,.25)" alt="{{ $employee->nama_lengkap }}">
         @endif
           <div>
             <div class="text-[15px] font-semibold">{{ $employee->nama_lengkap_dengan_gelar }}</div>
@@ -199,7 +199,7 @@
 @else
   {{-- ============ DASHBOARD ADMIN / SUPER ADMIN ============ --}}
   {{-- KPI --}}
-  <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 mb-6 stagger">
+  <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 mb-6 stagger">
     @php
       $kpis = [
         ['Total Pegawai', $totals['pegawai'], '#2563EB', '#60A5FA',
@@ -214,6 +214,9 @@
         ['Jumlah Pegawai Outsourcing', $totals['outsourcing'], '#7C3AED', '#A78BFA',
           '<path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>',
           route('employees.index', ['status' => 'outsourcing'])],
+        ['Pegawai Online', $totals['online'], '#16A34A', '#86EFAC',
+          '<path stroke-linecap="round" stroke-linejoin="round" d="M5 12.5a10 10 0 0114 0M8.5 16a5 5 0 017 0M12 19.5h.01"/>',
+          route('employees.index', ['status' => 'online'])],
         ['Menunggu Approval', $pendingApprovals, '#D97706', '#FBBF24',
           '<path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>',
           route('approvals.index')],
@@ -234,16 +237,36 @@
 
   {{-- Grafik Row 1: Unit + Status (donut) --}}
   @php
-    $donutColors = ['#2563EB', '#0EA5E9', '#10B981', '#F59E0B', '#F43F5E', '#8B5CF6', '#64748B'];
+    /* Warna tetap per status sehingga konsisten di semua donut & KPI
+       (Outsourcing = ungu, sama seperti kartu Jumlah Pegawai Outsourcing). */
+    $statusPalette = [
+        'PNS' => '#2563EB',
+        'PPPK' => '#0D9488',
+        'Honorer' => '#0EA5E9',
+        'Kontrak' => '#F59E0B',
+        'Outsourcing' => '#7C3AED',
+        'BLUD' => '#F43F5E',
+        'Magang' => '#10B981',
+        'Purnabakti' => '#64748B',
+        'Belum Diisi' => '#94A3B8',
+        'Tanpa Status' => '#94A3B8',
+    ];
+    $fallbackPalette = ['#2563EB', '#0EA5E9', '#10B981', '#F59E0B', '#F43F5E', '#8B5CF6', '#64748B'];
+
     $donutData = $perStatus->toArray();
     $donutTotal = array_sum($donutData) ?: 1;
-    $start = -90; $dStops = []; $dIdx = 0; $dLegend = [];
+    $donutLastKey = $donutData ? array_key_last($donutData) : null;
+    $dIdx = 0; $dStops = []; $dLegend = []; $from = -90.0;
     foreach ($donutData as $k => $v) {
-        $deg = intval(round($v / $donutTotal * 360));
-        $dLegend[] = [$k, $v, $donutColors[$dIdx % count($donutColors)]];
-        if ($deg > 0) {
-            $dStops[] = "{$donutColors[$dIdx % count($donutColors)]} {$start}deg " . ($start + $deg) . 'deg';
-            $start += $deg;
+        $color = $statusPalette[$k] ?? $fallbackPalette[$dIdx % count($fallbackPalette)];
+        $deg = $v / $donutTotal * 360;
+        $to = $from + $deg;
+        $dLegend[] = [$k, $v, $color];
+        if ($v > 0) {
+            $isLast = ($k === $donutLastKey);
+            $end = $isLast ? 270.0 : round($to, 3);
+            $dStops[] = "{$color} {$from}deg {$end}deg";
+            $from = $end;
         }
         $dIdx++;
     }
@@ -278,7 +301,7 @@
       <h3 class="section-title mb-5">Status Kepegawaian</h3>
       <div class="flex flex-col items-center gap-5">
         <div class="relative w-[150px] h-[150px] rounded-full donut" style="background:conic-gradient({{ $conic }}); box-shadow:inset 0 0 0 1px var(--line-soft)">
-          <div class="absolute inset-[22px] rounded-full flex flex-col items-center justify-center" style="background:#fff">
+          <div class="absolute inset-[22px] rounded-full flex flex-col items-center justify-center" style="background:var(--surface)">
             <div class="text-[26px] font-bold leading-none" style="color:var(--navy-900)">{{ $donutTotal }}</div>
             <div class="text-[10.5px] font-medium mt-1" style="color:var(--ink-500)">Total Pegawai</div>
           </div>
@@ -299,16 +322,22 @@
 
   {{-- Komposisi Status Pegawai (PNS/PPPK/Honorer/Kontrak = ruang lingkup BLUD; Outsourcing terpisah) --}}
   @php
-    $spColors = ['#2563EB', '#0D9488', '#7C3AED', '#0EA5E9', '#F59E0B', '#F43F5E', '#64748B'];
     $spData = $perJenis->toArray();
     $spTotal = array_sum($spData) ?: 1;
-    $start2 = -90; $dStops2 = []; $dIdx2 = 0; $dLegend2 = [];
+    $spMax = max($spData) ?: 1;
+    $spLastKey = $spData ? array_key_last($spData) : null;
+    $dIdx2 = 0; $dStops2 = []; $dLegend2 = []; $from2 = -90.0;
     foreach ($spData as $k => $v) {
-        $deg = intval(round($v / $spTotal * 360));
-        $dLegend2[] = [$k, $v, $spColors[$dIdx2 % count($spColors)]];
-        if ($deg > 0) {
-            $dStops2[] = "{$spColors[$dIdx2 % count($spColors)]} {$start2}deg " . ($start2 + $deg) . 'deg';
-            $start2 += $deg;
+        $base = $statusPalette[$k] ?? $fallbackPalette[$dIdx2 % count($fallbackPalette)];
+        $color = $base;
+        $deg = $v / $spTotal * 360;
+        $to = $from2 + $deg;
+        $dLegend2[] = [$k, $v, $color];
+        if ($v > 0) {
+            $isLast = ($k === $spLastKey);
+            $end = $isLast ? 270.0 : round($to, 3);
+            $dStops2[] = "{$color} {$from2}deg {$end}deg";
+            $from2 = $end;
         }
         $dIdx2++;
     }
@@ -327,7 +356,7 @@
     @else
       <div class="flex flex-col lg:flex-row items-center gap-8">
         <div class="relative w-[170px] h-[170px] rounded-full donut flex-none" style="background:conic-gradient({{ $conic2 }}); box-shadow:inset 0 0 0 1px var(--line-soft)">
-          <div class="absolute inset-[26px] rounded-full flex flex-col items-center justify-center" style="background:#fff">
+          <div class="absolute inset-[26px] rounded-full flex flex-col items-center justify-center" style="background:var(--surface)">
             <div class="text-[26px] font-bold leading-none" style="color:var(--navy-900)">{{ $spTotal }}</div>
             <div class="text-[10.5px] font-medium mt-1" style="color:var(--ink-500)">Total Pegawai</div>
           </div>

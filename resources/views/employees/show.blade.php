@@ -8,19 +8,19 @@
   .card .field-row{ border-bottom:none; padding:3px 0; }
   /* Tombol "Lainnya" — dropdown di ujung tab bar */
   .tab-more{ display:inline-flex; align-items:center; gap:7px; padding:7px 12px; margin:8px 2px 8px 6px;
-             border-radius:10px; font-size:13px; font-weight:600; color:var(--ink-700); background:#fff;
+             border-radius:10px; font-size:13px; font-weight:600; color:var(--ink-700); background:var(--surface);
              border:1px solid var(--line); transition:.15s; white-space:nowrap; cursor:pointer; }
   .tab-more:hover{ border-color:var(--blue-600); color:var(--blue-600); background:var(--blue-50); }
   .tab-more .chev{ color:var(--ink-300); margin-left:1px; transition:color .15s; }
   .tab-more:hover .chev{ color:var(--blue-600); }
   .dropdown.open .tab-more{ border-color:var(--blue-600); color:var(--blue-600); background:var(--blue-50); }
-  #dd-tabs-more .more-menu{ position:absolute; top:calc(100% + 13px); right:-8px; width:318px; background:#fff;
+  #dd-tabs-more .more-menu{ position:absolute; top:calc(100% + 13px); right:-8px; width:318px; background:var(--surface);
     border:1px solid var(--line); border-radius:16px;
     box-shadow:0 18px 44px rgba(16,24,40,.14), 0 4px 12px rgba(16,24,40,.08); padding:8px;
     opacity:0; transform:translateY(-8px) scale(.97); pointer-events:none;
     transform-origin:top right; transition:.18s cubic-bezier(.2,.7,.3,1); }
   #dd-tabs-more.dropdown.open .more-menu{ opacity:1; transform:translateY(0) scale(1); pointer-events:auto; }
-  #dd-tabs-more .more-caret{ position:absolute; top:-6px; right:26px; width:12px; height:12px; background:#fff;
+  #dd-tabs-more .more-caret{ position:absolute; top:-6px; right:26px; width:12px; height:12px; background:var(--surface);
     border-left:1px solid var(--line); border-top:1px solid var(--line); transform:rotate(45deg); border-radius:2.5px 0 0 0; }
   #dd-tabs-more .more-head{ display:flex; align-items:center; gap:11px; padding:9px 10px 12px; border-bottom:1px solid var(--line-soft); }
   #dd-tabs-more .more-ic{ width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center;
@@ -200,7 +200,7 @@
         <div class="text-[13px] mt-1 font-medium" style="color:var(--ink-700)">{{ $employee->currentPosition?->name }}</div>
         <div class="text-[13px] mt-0.5" style="color:var(--ink-700)">{{ $employee->workUnit?->name }}</div>
       </div>
-      <div class="p-4 rounded-xl flex-none" style="border:1px solid var(--line-soft);background:#fff;min-width:190px;max-width:240px">
+      <div class="p-4 rounded-xl flex-none" style="border:1px solid var(--line-soft);background:var(--surface);min-width:190px;max-width:240px">
         <div class="field-row" style="padding:5px 0"><span style="color:var(--ink-500)">Unit Kerja</span><span class="text-right font-medium" style="color:var(--ink-700);max-width:130px">{{ $employee->workUnit?->name }}</span></div>
         <div class="field-row" style="padding:5px 0"><span style="color:var(--ink-500)">Jabatan</span><span class="text-right font-medium" style="color:var(--ink-700);max-width:130px">{{ $employee->currentPosition?->name }}</span></div>
         <div class="field-row" style="padding:5px 0;border:none"><span style="color:var(--ink-500)">Pangkat/Golongan</span><span class="text-right font-medium" style="color:var(--ink-700)">{{ $employee->golonganAkhir ? $employee->golonganAkhir->golongan . ($employee->golonganAkhir->pangkat ? ' (' . $employee->golonganAkhir->pangkat . ')' : '') : '' }}</span></div>
@@ -244,7 +244,7 @@
             @csrf
             @method('PATCH')
             <input type="hidden" name="aktif" value="1">
-            <button type="submit" class="btn btn-sm" style="background:#fff;color:var(--green-700);border:1px solid var(--green-600)">
+            <button type="submit" class="btn btn-sm" style="background:var(--surface);color:var(--green-600);border:1px solid var(--green-600)">
               <svg style="width:13px;height:13px;display:inline;margin-right:5px;vertical-align:-1px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
               Aktifkan Kembali
             </button>

@@ -44,6 +44,17 @@
     <input type="text" name="app_tagline" value="{{ $settings['app_tagline'] ?? '' }}" class="input">
   </div>
 
+  <h3 class="section-title mb-4">Tampilan Aplikasi</h3>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-4 mb-6">
+    <label class="flabel">Tema Default</label>
+    <select name="app_theme" id="theme-select" class="input"
+            onchange="document.getElementById('theme-value').value = this.value; document.getElementById('theme-form').submit();">
+      <option value="light" @selected(($settings['app_theme'] ?? 'light') === 'light')>Terang</option>
+      <option value="dark" @selected(($settings['app_theme'] ?? 'light') === 'dark')>Gelap</option>
+    </select>
+    <p class="md:col-span-2 text-[12px]" style="color:var(--ink-500)">Tema berlaku untuk seluruh pengguna aplikasi — berubah <b>langsung</b> begitu dipilih. Atur ke <b>Terang</b> jika ingin tampilan cerah seperti semula.</p>
+  </div>
+
   <h3 class="section-title mb-4">Identitas Rumah Sakit</h3>
   <div class="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-4 mb-6">
     <label class="flabel">Nama Rumah Sakit</label>
@@ -65,6 +76,11 @@
 
 <form id="reset-photo-form" method="POST" action="{{ route('settings.photo-delete') }}" style="display:none">
   @csrf
+</form>
+
+<form id="theme-form" method="POST" action="{{ route('settings.theme') }}" style="display:none">
+  @csrf
+  <input type="hidden" name="theme" id="theme-value" value="{{ $settings['app_theme'] ?? 'light' }}">
 </form>
 
 @push('scripts')

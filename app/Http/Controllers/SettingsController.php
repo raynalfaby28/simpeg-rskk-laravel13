@@ -16,7 +16,10 @@ class SettingsController extends Controller
         'rs_address' => 'Alamat Rumah Sakit',
         'rs_phone' => 'Telepon Rumah Sakit',
         'rs_email' => 'Email Rumah Sakit',
+        'app_theme' => 'Tema Aplikasi',
     ];
+
+    private const THEMES = ['light', 'dark'];
 
     public function edit()
     {
@@ -32,6 +35,11 @@ class SettingsController extends Controller
     public function update(Request $request)
     {
         foreach ($this->keys as $key => $label) {
+            if ($key === 'app_theme') {
+                $theme = $request->input('app_theme', 'light');
+                Settings::set($key, in_array($theme, self::THEMES, true) ? $theme : 'light');
+                continue;
+            }
             Settings::set($key, $request->input($key, ''));
         }
 
@@ -63,6 +71,23 @@ class SettingsController extends Controller
         }
 
         return redirect()->route('settings.edit')->with('success', 'Foto halaman login dikembalikan ke bawaan.');
+    }
+
+    /**
+     * Tombol cepat ganti tema dari topbar — hanya Super Admin.
+     */
+    public function setTheme(Request $request)
+    {
+        $theme = $request->input('theme', 'light');
+
+        if (! in_array($theme, self::THEMES, true)) {
+            return back()->with('error', 'Tema tidak valid.');
+        }
+
+        Settings::set('app_theme', $theme);
+        AuditLog::record('update', 'Pengaturan', auth()->user(), "Mengubah tema aplikasi menjadi $theme");
+
+        return back()->with('success', $theme === 'dark' ? 'Tema aplikasi diubah menjadi Gelap.' : 'Tema aplikasi dikembalikan ke Terang.');
     }
 
     private function loginPhotoUrl(?string $path): ?string

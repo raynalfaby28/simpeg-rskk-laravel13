@@ -43,7 +43,7 @@
 
   /* ---- Hero card ---- */
   .profile-hero{ position:relative; border-radius:24px; overflow:hidden;
-    border:1px solid var(--line-soft); box-shadow:var(--shadow-md); background:#fff; margin-bottom:16px; }
+    border:1px solid var(--line-soft); box-shadow:var(--shadow-md); background:var(--surface); margin-bottom:16px; }
 
   /* ---- Cover RSKK (layered image, bukan cover tunggal) — dirampingkan agar foto tidak mendominasi ---- */
   .profile-cover{ position:relative; height:200px; overflow:hidden;
@@ -76,10 +76,10 @@
 
   /* ---- Area putih: avatar + identitas (padding-right mencegah summary menutupi profil) ---- */
   .profile-main{ position:relative; z-index:3; display:flex; align-items:flex-start; gap:24px;
-    min-height:250px; padding:14px 344px 26px 36px; background:#fff; }
+    min-height:250px; padding:14px 344px 26px 36px; background:var(--surface); }
   .profile-page .profile-avatar{ width:158px; height:158px; border-radius:50%; overflow:hidden; flex:none;
     position:relative; margin-top:-50px; background:var(--blue-600);
-    border:5px solid #fff; box-shadow:0 15px 35px rgba(15,35,70,.20); }
+    border:5px solid var(--surface); box-shadow:0 15px 35px rgba(15,35,70,.20); }
   .profile-page .profile-avatar img{ width:100%; height:100%; object-fit:cover; display:block;
     transition:transform .3s cubic-bezier(.22,1,.36,1); }
   .profile-page .profile-avatar:hover img{ transform:scale(1.035); }
@@ -137,7 +137,7 @@
   .sum-row .val{ font-size:14px; font-weight:700; color:var(--ink-900); line-height:1.45; margin-top:2px; word-break:break-word; }
   .sum-sep{ height:1px; background:var(--line-soft); margin:0 2px; }
   .profile-summary::-webkit-scrollbar{ width:8px; }
-  .profile-summary::-webkit-scrollbar-thumb{ background:#C7D4E6; border-radius:999px; border:2px solid #fff; }
+  .profile-summary::-webkit-scrollbar-thumb{ background:#C7D4E6; border-radius:999px; border:2px solid var(--surface); }
   .profile-summary::-webkit-scrollbar-thumb:hover{ background:#A9BBD6; }
   .profile-page .profile-avatar-wrap .avatar-edit:focus-visible,
   .profile-page .profile-avatar-wrap .avatar-delete:focus-visible,
@@ -202,20 +202,20 @@
   .tab-btn.active .tab-icon-colored{ color:var(--blue-600); }
   /* Tombol "Lainnya" — dropdown di ujung tab bar */
   .tab-more{ display:inline-flex; align-items:center; gap:7px; padding:7px 12px; margin:8px 2px 8px 6px;
-             border-radius:10px; font-size:13px; font-weight:600; color:var(--ink-700); background:#fff;
+             border-radius:10px; font-size:13px; font-weight:600; color:var(--ink-700); background:var(--surface);
              border:1px solid var(--line); transition:.15s; white-space:nowrap; cursor:pointer; }
   .tab-more:hover{ border-color:var(--blue-600); color:var(--blue-600); background:var(--blue-50); }
   .tab-more .chev{ color:var(--ink-300); margin-left:1px; transition:color .15s; }
   .tab-more:hover .chev{ color:var(--blue-600); }
   .dropdown.open .tab-more{ border-color:var(--blue-600); color:var(--blue-600); background:var(--blue-50); }
   /* Panel dropdown "Lainnya" — elegan */
-  #dd-tabs-more .more-menu{ position:absolute; top:calc(100% + 13px); right:-8px; width:318px; background:#fff;
+  #dd-tabs-more .more-menu{ position:absolute; top:calc(100% + 13px); right:-8px; width:318px; background:var(--surface);
     border:1px solid var(--line); border-radius:16px;
     box-shadow:0 18px 44px rgba(16,24,40,.14), 0 4px 12px rgba(16,24,40,.08); padding:8px;
     opacity:0; transform:translateY(-8px) scale(.97); pointer-events:none;
     transform-origin:top right; transition:.18s cubic-bezier(.2,.7,.3,1); }
   #dd-tabs-more.dropdown.open .more-menu{ opacity:1; transform:translateY(0) scale(1); pointer-events:auto; }
-  #dd-tabs-more .more-caret{ position:absolute; top:-6px; right:26px; width:12px; height:12px; background:#fff;
+  #dd-tabs-more .more-caret{ position:absolute; top:-6px; right:26px; width:12px; height:12px; background:var(--surface);
     border-left:1px solid var(--line); border-top:1px solid var(--line); transform:rotate(45deg); border-radius:2.5px 0 0 0; }
   #dd-tabs-more .more-head{ display:flex; align-items:center; gap:11px; padding:9px 10px 12px; border-bottom:1px solid var(--line-soft); }
   #dd-tabs-more .more-ic{ width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center;
@@ -240,7 +240,7 @@
   #dd-tabs-more .more-item.active .m-chek{ display:inline-flex !important; color:var(--blue-600); }
   #dd-tabs-more .more-div{ height:1px; background:var(--line-soft); margin:6px 10px; }
   /* Ringkasan stat cards */
-  .rk-card{ padding:16px 18px; border:1px solid var(--line-soft); border-radius:14px; background:linear-gradient(180deg,#fff,#FAFBFD); box-shadow:var(--shadow-sm); }
+  .rk-card{ padding:16px 18px; border:1px solid var(--line-soft); border-radius:14px; background:linear-gradient(180deg,var(--surface),var(--line-soft)); box-shadow:var(--shadow-sm); }
   .rk-card .rk-ic{ width:38px; height:38px; border-radius:11px; display:flex; align-items:center; justify-content:center; flex:none; }
   .rk-card .rk-label{ font-size:11px; font-weight:600; color:var(--ink-300); letter-spacing:.04em; text-transform:uppercase; margin-top:10px; }
   .rk-card .rk-value{ font-size:14px; font-weight:700; color:var(--ink-900); margin-top:2px; line-height:1.4; }

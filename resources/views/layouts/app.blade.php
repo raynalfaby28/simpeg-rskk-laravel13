@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-@php $__app = App\Models\Settings::get('app_name', 'SIMPEG RSKK'); @endphp
+@php $__app = App\Models\Settings::get('app_name', 'SIMPEG RSKK'); $__theme = App\Models\Settings::get('app_theme', 'light'); @endphp
 <html lang="id">
 <head>
 <meta charset="UTF-8">
@@ -11,6 +11,14 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script>
+  /* Tema global ditentukan Super Admin via Pengaturan Sistem — diterapkan
+     sebelum paint agar tidak ada flash terang/gelap. */
+  (function () {
+    var t = '{{ $__theme }}';
+    document.documentElement.setAttribute('data-theme', t === 'dark' ? 'dark' : 'light');
+  })();
+</script>
 <style>
   /* ============================================================
      BASE RESET (backup: menjaga stabilitas walau Tailwind CDN
@@ -35,7 +43,7 @@
     --teal-100:#CCFBF1; --teal-50:#F0FDFA; --teal-300:#5EEAD4;
     --cyan-600:#0891B2; --cyan-50:#ECFEFF;
     /* Teks & latar — slate netral pemerintah */
-    --ink-900:#101828; --ink-700:#1F2937; --ink-500:#475467; --ink-300:#98A2B3; --ink-200:#D0D5DD;
+    --ink-900:#101828; --ink-800:#172033; --ink-700:#1F2937; --ink-600:#344054; --ink-500:#475467; --ink-400:#667085; --ink-300:#98A2B3; --ink-200:#D0D5DD;
     --paper:#F6F9FC; --line:#E4E7EC; --line-soft:#EEF1F6;
     --surface:#FFFFFF;
     /* Status — konsisten seluruh sistem */
@@ -57,6 +65,22 @@
     --font-head:'Poppins','Inter',ui-sans-serif,system-ui,sans-serif;
 
     --z-sidebar:40; --z-backdrop:35; --z-topbar:30; --z-dropdown:50; --z-modal:90;
+  }
+
+  /* ---------- Dark mode — token override (satu sumber tema) ---------- */
+  :root[data-theme="dark"]{
+    --navy-900:#E7ECF5; --navy-800:#C8D2E6; --navy-700:#AABBD9;
+    --blue-900:#BFDBFE; --blue-800:#8FB6FF; --blue-100:#20315C; --blue-50:#16233F;
+    --teal-100:#134E46; --teal-50:#0B2925;
+    --cyan-50:#0A2630; --cyan-600:#22D3EE;
+    --ink-900:#E7ECF5; --ink-800:#DEE4EF; --ink-700:#C6CEDD; --ink-600:#B0B9C9; --ink-500:#8C99B0; --ink-400:#6E7C96; --ink-300:#5B6880; --ink-200:#3E4A5E;
+    --paper:#0D1321; --line:#242F42; --line-soft:#1B2435; --surface:#141C2C;
+    --green-600:#4ADE80; --green-100:#174A37; --green-50:#0E2A21;
+    --amber-600:#F59E0B; --amber-700:#FBBF24; --amber-200:#8A6416; --amber-100:#54421C; --amber-50:#2B2113;
+    --red-600:#F87171; --red-500:#EF4444; --red-100:#5B2626; --red-50:#311A1A;
+    --gray-100:#1F2A3C; --gray-200:#3E4A5E;
+    --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+    --shadow-md:0 12px 30px -12px rgba(0,0,0,.55);
   }
 
   /* ---------- Base ---------- */
@@ -118,9 +142,13 @@
   .side-nav::-webkit-scrollbar-track{ background:transparent; }
 
   /* --- Sidebar header (brand identity block) --- */
-  .side-head{ padding:16px 18px 14px; display:flex; flex-direction:column; align-items:center; flex:none;
+  .side-head{ position:relative; padding:16px 18px 14px; display:flex; flex-direction:column; align-items:center; flex:none;
               border-bottom:1px solid #E8EEF6;
               background:linear-gradient(180deg,rgba(238,243,255,.6),rgba(255,255,255,0) 78%); }
+  .side-close{ position:absolute; top:10px; right:10px; width:32px; height:32px; border-radius:9px; display:none;
+               align-items:center; justify-content:center; color:var(--ink-400); cursor:pointer; transition:.15s; z-index:2; }
+  .side-close:hover{ background:var(--blue-50); color:var(--blue-600); }
+  @media (max-width:1023px){ .side-close{ display:flex; } }
   .brand-plate{ position:relative; width:min(176px,100%); height:46px; padding:5px 20px; border-radius:16px; flex:none;
                 display:flex; align-items:center; justify-content:center; overflow:hidden;
                 background:linear-gradient(145deg,#F8FBFF,#EEF5FF);
@@ -408,7 +436,7 @@
   .empty-state .es-ic{ width:52px; height:52px; border-radius:14px; margin:0 auto 12px; display:flex; align-items:center; justify-content:center;
                         background:var(--blue-50); color:var(--blue-600); }
 
-  .avatar{ border-radius:50%; object-fit:cover; border:2px solid #fff; box-shadow:var(--shadow-sm); }
+  .avatar{ border-radius:50%; object-fit:cover; border:2px solid var(--surface); box-shadow:var(--shadow-sm); }
   .avatar-zoom{ cursor:zoom-in; }
   /* Flatpickr — tema konsisten dengan design token aplikasi */
   .flatpickr-calendar{ border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow-md); font-family:var(--font-sans); font-size:13px; }
@@ -509,18 +537,18 @@
   .prof-comp-hint{ font-size:11.5px; color:var(--ink-400); margin-top:8px; }
   .profile-avatar{ width:80px; height:80px; min-width:80px; min-height:80px; max-width:80px; max-height:80px;
                    border-radius:50%; overflow:hidden; flex:none; position:relative; background-color:var(--blue-600);
-                   box-shadow:var(--shadow-sm); border:2px solid #fff; }
+                   box-shadow:var(--shadow-sm); border:2px solid var(--surface); }
   .profile-avatar img{ width:100%; height:100%; object-fit:cover; display:block; }
   .profile-avatar .pa-inits{ position:absolute; inset:0; display:none; align-items:center; justify-content:center;
                              color:#fff; font-family:var(--font-head); font-weight:700; font-size:26px; }
   .profile-avatar-wrap{ position:relative; flex:none; }
   .profile-avatar-wrap .avatar-edit{ position:absolute; right:-4px; bottom:-4px; width:28px; height:28px; border-radius:50%;
     display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:3;
-    border:2px solid #fff; background:var(--blue-600); color:#fff; box-shadow:var(--shadow-sm); }
+    border:2px solid var(--surface); background:var(--blue-600); color:#fff; box-shadow:var(--shadow-sm); }
   .profile-avatar-wrap .avatar-edit:hover{ background:var(--blue-700); }
   .profile-avatar-wrap .avatar-delete{ position:absolute; left:-4px; bottom:-4px; width:28px; height:28px; border-radius:50%;
     display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:3;
-    border:2px solid #fff; background:rgba(185,28,28,.85); color:#fff; box-shadow:var(--shadow-sm); }
+    border:2px solid var(--surface); background:rgba(185,28,28,.85); color:#fff; box-shadow:var(--shadow-sm); }
   .profile-avatar-wrap .avatar-delete:hover{ background:var(--red-600); }
   .fg{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:20px; align-items:start; }
   .fg > .lg-2{ grid-column:1 / -1; }
@@ -628,6 +656,83 @@
     .main-content{ padding-top:22px; }
     .topbar{ padding:0 14px; gap:8px; }
   }
+
+  /* ============================================================
+     DARK MODE — overrides untuk warna keras (literal terang)
+     ============================================================ */
+  [data-theme="dark"] body{ background:var(--paper); }
+
+  /* Sidebar */
+  [data-theme="dark"] .side-head{
+    border-bottom-color:var(--line);
+    background:linear-gradient(180deg,rgba(22,35,63,.55),rgba(20,28,44,0) 78%); }
+  [data-theme="dark"] .brand-plate{
+    background:linear-gradient(145deg,#182138,#141B29); border-color:rgba(96,165,250,.18);
+    box-shadow:0 4px 12px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.04); }
+  [data-theme="dark"] .side-head:hover .brand-plate{
+    border-color:rgba(96,165,250,.32); box-shadow:0 6px 15px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.04); }
+  [data-theme="dark"] .brand-title{ color:var(--ink-900); }
+  [data-theme="dark"] .brand-sub{ color:var(--ink-500); }
+  [data-theme="dark"] .navlink:hover{ background:#111A29; color:var(--ink-900); }
+  [data-theme="dark"] .navlink.active{ background:var(--blue-50); color:#BFDBFE; box-shadow:inset 3px 0 0 var(--blue-500); }
+  [data-theme="dark"] .navlink.active .ic{ color:#60A5FA; }
+  [data-theme="dark"] .side-nav::-webkit-scrollbar-thumb{ background:var(--line); }
+  [data-theme="dark"] .side-nav::-webkit-scrollbar-thumb:hover{ background:#33415B; }
+  [data-theme="dark"] .side-user:hover{ background:#111A29; }
+  [data-theme="dark"] .side-logout:hover{ background:#2A1C1C; color:#FCA5A5; }
+  [data-theme="dark"] .nav-badge{ box-shadow:0 0 0 2px var(--surface); }
+
+  /* Topbar / search / dropdown */
+  [data-theme="dark"] .topbar{ background:rgba(20,28,44,.82); box-shadow:0 1px 2px rgba(0,0,0,.3); }
+  [data-theme="dark"] .topbar-search input:focus{ background:var(--paper); }
+  [data-theme="dark"] .gs-res, [data-theme="dark"] .dropdown-menu{ background:var(--surface); }
+  [data-theme="dark"] .dropdown-menu, [data-theme="dark"] .gs-res{ box-shadow:0 12px 30px -12px rgba(0,0,0,.6); }
+
+  /* Surfaces umum */
+  [data-theme="dark"] .btn-outline{ background:var(--surface); }
+  [data-theme="dark"] .input, [data-theme="dark"] select.input, [data-theme="dark"] textarea.input{ background:var(--paper); }
+  [data-theme="dark"] .chip{ background:var(--paper); }
+  [data-theme="dark"] .modal{ background:var(--surface); }
+  [data-theme="dark"] .table-th{ background:#10182A; }
+  [data-theme="dark"] tr.row-line:hover{ background:#141E30; }
+  [data-theme="dark"] .hrow:hover{ background:#131E33; border-color:#2A3B55 !important; }
+  [data-theme="dark"] .pagination .page-item .page-link{ background:var(--paper); }
+  [data-theme="dark"] .toast{ background:var(--surface); }
+  [data-theme="dark"] .notifications\:hover\:bg-\[\#F7F9FC\]:hover,
+  [data-theme="dark"] .hover\:bg-\[\#F7F9FC\]:hover{ background:#141E30 !important; }
+
+  /* Flatpickr */
+  [data-theme="dark"] .flatpickr-calendar{ background:var(--surface); }
+  [data-theme="dark"] .flatpickr-calendar.arrowTop:after{ border-bottom-color:var(--surface); }
+  [data-theme="dark"] .flatpickr-calendar.arrowBottom:after{ border-top-color:var(--surface); }
+  [data-theme="dark"] .flatpickr-day.today{ border-color:#60A5FA; }
+
+  /* Info summary (read-only) */
+  [data-theme="dark"] .ik-sub, [data-theme="dark"] .ik-label, [data-theme="dark"] .ik-note{ color:#8C99B0; }
+  [data-theme="dark"] .ik-value{ color:#E7ECF5; }
+  [data-theme="dark"] .ik-dim{ color:#5B6880; }
+  [data-theme="dark"] .ik-note svg{ color:#5B6880; }
+  [data-theme="dark"] .ik-badge{ background:var(--green-50); border-color:var(--green-100); color:var(--green-600); }
+  [data-theme="dark"] .ik-badge .ik-dot{ background:var(--green-600); }
+  [data-theme="dark"] .ik-badge.is-empty{ background:#16202E; border-color:var(--line); color:#5B6880; }
+  [data-theme="dark"] .ik-badge.is-empty .ik-dot{ background:var(--ink-300); }
+
+  /* Profil ESS + modal destruktif (amber) */
+  [data-theme="dark"] .pend-t{ color:#FCD34D; }
+  [data-theme="dark"] .pend-s{ color:#F59E0B; }
+  [data-theme="dark"] .mnn-warn{ background:var(--amber-50); border-color:var(--amber-100); color:#FDE68A; }
+  [data-theme="dark"] .mnn-warn svg{ color:#F59E0B; }
+  [data-theme="dark"] .mnn-ic{ background:var(--amber-50); color:#FB923C; }
+
+  /* Field disabled (read-only) — sering memakai literal #F8FAFC secara inline */
+  [data-theme="dark"] input[disabled], [data-theme="dark"] select[disabled], [data-theme="dark"] textarea[disabled]{ background:#1B2435 !important; }
+
+  /* Profil ESS — cover menyatu dengan surface gelap */
+  [data-theme="dark"] .profile-cover-overlay{
+    background:linear-gradient(180deg, rgba(13,19,33,.18), rgba(20,28,44,.70) 55%, rgba(20,28,44,1) 100%); }
+  [data-theme="dark"] .profile-cover-id{ background:rgba(9,14,32,.58); border-color:rgba(255,255,255,.16); }
+  [data-theme="dark"] .profile-summary::-webkit-scrollbar-thumb{ border-color:var(--surface); }
+  [data-theme="dark"] .profile-summary::-webkit-scrollbar-track{ background:transparent; }
 </style>
 <script>try{if(!sessionStorage.getItem('rskk_brand_seen')){document.documentElement.classList.add('brand-anim');sessionStorage.setItem('rskk_brand_seen','1');}}catch(e){document.documentElement.classList.add('brand-anim');}</script>
 </head>
@@ -658,6 +763,9 @@
         <div class="brand-sub">{{ $appTagline }}</div>
         <div class="brand-accent" aria-hidden="true"><i></i></div>
       </div>
+      <button type="button" class="side-close" onclick="toggleSidebar(false)" aria-label="Tutup menu">
+        <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
     </div>
 
     {{-- Nav --}}
@@ -789,12 +897,25 @@
       @endif
 
       <div class="flex flex-none items-center" style="gap:8px">
+        @if(auth()->user()->role === 'super_admin')
+          <form method="POST" action="{{ route('settings.theme') }}" class="flex-none">
+            @csrf
+            <input type="hidden" name="theme" value="{{ $__theme === 'dark' ? 'light' : 'dark' }}">
+            <button type="submit" class="icon-btn" title="{{ $__theme === 'dark' ? 'Kembalikan ke tema terang' : 'Ubah ke tema gelap' }} (global, semua pengguna)" aria-label="Ganti tema aplikasi gelap/terang">
+              @if($__theme === 'dark')
+                <svg style="width:19px;height:19px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.4 6.4l-.7-.7M6.3 6.3l-.7-.7m12.8 0l-.7.7M6.3 17.7l-.7.7M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+              @else
+                <svg style="width:19px;height:19px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>
+              @endif
+            </button>
+          </form>
+        @endif
         @php $recentNotifs = auth()->user()->appNotifications()->latest()->limit(5)->get(); @endphp
         <div class="dropdown" id="dd-notif">
           <button class="icon-btn relative" onclick="toggleDropdown('dd-notif')" title="Notifikasi" aria-label="Notifikasi">
             <svg style="width:19px;height:19px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5m6 0a3 3 0 01-6 0"/></svg>
             @if($unreadNotif > 0)
-              <span class="absolute flex items-center justify-center text-[9px] font-bold text-white" style="top:1px;right:1px;min-width:16px;height:16px;border-radius:100px;background:var(--red-600);border:2px solid #fff">{{ $unreadNotif }}</span>
+              <span class="absolute flex items-center justify-center text-[9px] font-bold text-white" style="top:1px;right:1px;min-width:16px;height:16px;border-radius:100px;background:var(--red-600);border:2px solid var(--surface)">{{ $unreadNotif }}</span>
             @endif
           </button>
           <div class="dropdown-menu">
@@ -874,15 +995,26 @@
 <script>
   const shell = document.getElementById('app-shell');
   const isMobile = () => window.innerWidth <= 1023;
+
+  /* ---------- Sidebar collapse (diingat antar kunjungan) ---------- */
+  function setCollapsed(c){
+    shell.classList.toggle('collapsed', c);
+    try{ localStorage.setItem('rskk_sidebar', c ? '1' : '0'); }catch(e){}
+  }
   function toggleSidebar(force){
     const m = isMobile();
     if(m){
       const open = force !== undefined ? force : !shell.classList.contains('mobile-open');
       shell.classList.toggle('mobile-open', open);
     } else {
-      shell.classList.toggle('collapsed');
+      setCollapsed(force !== undefined ? force : !shell.classList.contains('collapsed'));
     }
   }
+  (function(){
+    try{
+      if(shell && localStorage.getItem('rskk_sidebar') === '1' && window.innerWidth > 1023) shell.classList.add('collapsed');
+    }catch(e){}
+  })();
   function toggleDropdown(id){
     document.querySelectorAll('.dropdown.open').forEach(d => { if(d.id !== id) d.classList.remove('open'); });
     const el = document.getElementById(id);

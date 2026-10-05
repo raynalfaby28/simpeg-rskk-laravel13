@@ -21,7 +21,7 @@
       @foreach ($types as $key => $c)
         <a href="{{ route('master.index', $key) }}"
           class="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[12.5px] font-medium transition"
-          style="{{ $key === $type ? 'background:var(--blue-600); color:#fff' : 'color:var(--ink-600); border:1px solid var(--line); background:#fff' }}">
+          style="{{ $key === $type ? 'background:var(--blue-600); color:#fff' : 'color:var(--ink-600); border:1px solid var(--line); background:var(--surface)' }}">
           <span class="w-2 h-2 rounded-full shrink-0" style="background:{{ $key === $type ? '#fff' : 'var(--blue-300, #93b4f0)' }}"></span>
           <span class="flex-1 min-w-0">{{ $c['label'] }}</span>
           <span class="text-[10.5px] font-semibold px-1.5 py-0.5 rounded-full"

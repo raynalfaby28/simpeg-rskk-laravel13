@@ -8,6 +8,7 @@ use App\Models\Document;
 use App\Models\Employee;
 use App\Models\EmployeeMutation;
 use App\Models\EmployeeTraining;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -66,6 +67,7 @@ $notifications = $user->appNotifications()->latest()->limit(5)->get();
             'nonaktif' => Employee::where('status_aktif', false)->count(),
             'baru' => Employee::where('created_at', '>=', now()->subDays(30))->count(),
             'outsourcing' => Employee::where('status_pegawai', 'Outsourcing')->count(),
+            'online' => Employee::whereIn('user_id', $this->onlineUserIds())->count(),
             'blud' => Employee::whereIn('status_pegawai', ['PNS', 'PPPK', 'Honorer', 'Kontrak', 'BLUD'])->count(),
         ];
 
@@ -106,8 +108,7 @@ $notifications = $user->appNotifications()->latest()->limit(5)->get();
         $perJenis = Employee::get()
             ->groupBy(fn ($e) => $e->status_pegawai ?: 'Belum Diisi')
             ->map->count()
-            ->sortDesc()
-            ->take(6);
+            ->sortDesc();
 
         $perGender = [
             'Laki-laki' => Employee::where('jenis_kelamin', 'L')->count(),
@@ -165,5 +166,14 @@ $notifications = $user->appNotifications()->latest()->limit(5)->get();
             'role' => 'admin',
             'unreadCount' => $unreadCount,
         ]);
+    }
+
+    /**
+     * ID user yang dianggap sedang online (aktivitas dalam 5 menit ke belakang) —
+     * selaras dengan filter status online di daftar pegawai.
+     */
+    private function onlineUserIds(): \Illuminate\Support\Collection
+    {
+        return User::where('last_activity_at', '>=', now()->subMinutes(5))->pluck('id');
     }
 }

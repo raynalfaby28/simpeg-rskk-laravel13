@@ -71,6 +71,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:super_admin')->group(function () {
         Route::get('/pengaturan/sistem', [SettingsController::class, 'edit'])->name('settings.edit');
         Route::put('/pengaturan/sistem', [SettingsController::class, 'update'])->name('settings.update');
+        Route::post('/pengaturan/sistem/tema', [SettingsController::class, 'setTheme'])->name('settings.theme');
         Route::post('/pengaturan/sistem/foto-hapus', [SettingsController::class, 'deletePhoto'])->name('settings.photo-delete');
     });
 
