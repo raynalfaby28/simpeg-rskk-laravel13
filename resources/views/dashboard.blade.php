@@ -312,7 +312,7 @@
               <span class="w-2.5 h-2.5 rounded-full flex-none" style="background:{{ $color }}"></span>
               <span class="truncate flex-1" style="color:var(--ink-700)">{{ $name }}</span>
               <span class="font-semibold" style="color:var(--ink-900)">{{ $count }}</span>
-              <span class="w-10 text-right font-medium" style="color:var(--ink-300)">{{ $donutTotal ? round($count / $donutTotal * 100) : 0 }}%</span>
+              <span class="w-10 text-right font-medium" style="color:var(--ink-300)">{{ $donutTotal ? number_format($count / $donutTotal * 100, 1) : 0 }}%</span>
             </div>
           @endforeach
         </div>
@@ -324,20 +324,23 @@
   @php
     $spData = $perJenis->toArray();
     $spTotal = array_sum($spData) ?: 1;
-    $spMax = max($spData) ?: 1;
     $spLastKey = $spData ? array_key_last($spData) : null;
-    $dIdx2 = 0; $dStops2 = []; $dLegend2 = []; $from2 = -90.0;
+    $dStops2 = [];
+    $dLegend2 = [];
+    $from2 = -90.0;
+    $cumCount2 = 0;
+    $fbCount2 = count($fallbackPalette);
+    $dIdx2 = 0;
     foreach ($spData as $k => $v) {
-        $base = $statusPalette[$k] ?? $fallbackPalette[$dIdx2 % count($fallbackPalette)];
+        $base = $statusPalette[$k] ?? ($fbCount2 > 0 ? $fallbackPalette[$dIdx2 % $fbCount2] : '#94A3B8');
         $color = $base;
-        $deg = $v / $spTotal * 360;
-        $to = $from2 + $deg;
         $dLegend2[] = [$k, $v, $color];
         if ($v > 0) {
-            $isLast = ($k === $spLastKey);
-            $end = $isLast ? 270.0 : round($to, 3);
-            $dStops2[] = "{$color} {$from2}deg {$end}deg";
-            $from2 = $end;
+            $cumCount2 += $v;
+            $endAbs = ($cumCount2 / $spTotal) * 360.0 - 90.0;
+            $endStop = ($k === $spLastKey) ? 270.0 : $endAbs;
+            $dStops2[] = "{$color} {$from2}deg {$endStop}deg";
+            $from2 = $endStop;
         }
         $dIdx2++;
     }
@@ -367,7 +370,7 @@
               <span class="w-2.5 h-2.5 rounded-full flex-none" style="background:{{ $color }}"></span>
               <span class="truncate flex-1" style="color:var(--ink-700)">{{ $name }}</span>
               <span class="font-semibold" style="color:var(--ink-900)">{{ $count }}</span>
-              <span class="w-10 text-right font-medium" style="color:var(--ink-300)">{{ $spTotal ? round($count / $spTotal * 100) : 0 }}%</span>
+              <span class="w-10 text-right font-medium" style="color:var(--ink-300)">{{ $spTotal > 0 ? number_format($count / $spTotal * 100, 1) : 0 }}%</span>
             </div>
           @endforeach
         </div>
