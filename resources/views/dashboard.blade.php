@@ -255,20 +255,22 @@
 
     $donutData = $perStatus->toArray();
     $donutTotal = array_sum($donutData) ?: 1;
-    $donutLastKey = $donutData ? array_key_last($donutData) : null;
-    $dIdx = 0; $dStops = []; $dLegend = []; $from = -90.0;
+    $dIdx = 0; $dStops = []; $dLegend = []; $from = 0.0; $cum = 0.0;
     foreach ($donutData as $k => $v) {
         $color = $statusPalette[$k] ?? $fallbackPalette[$dIdx % count($fallbackPalette)];
-        $deg = $v / $donutTotal * 360;
-        $to = $from + $deg;
         $dLegend[] = [$k, $v, $color];
         if ($v > 0) {
-            $isLast = ($k === $donutLastKey);
-            $end = $isLast ? 270.0 : round($to, 3);
+            $cum += (float)$v;
+            $end = ($cum / (float)$donutTotal) * 360.0;
+            // Segmen terakhir ditutup tepat ke 360deg agar tidak ada celah desimal.
+            $end = ($end >= 359.999) ? 360.0 : $end;
             $dStops[] = "{$color} {$from}deg {$end}deg";
             $from = $end;
         }
         $dIdx++;
+    }
+    if ($from < 360.0 && $dStops) {
+        $dStops[] = "{$color} {$from}deg 360deg";
     }
     $conic = $dStops ? implode(', ', $dStops) : '#E4E7EC 0deg 360deg';
   @endphp
@@ -324,25 +326,27 @@
   @php
     $spData = $perJenis->toArray();
     $spTotal = array_sum($spData) ?: 1;
-    $spLastKey = $spData ? array_key_last($spData) : null;
     $dStops2 = [];
     $dLegend2 = [];
-    $from2 = -90.0;
-    $cumCount2 = 0;
+    $from2 = 0.0;
+    $cumCount2 = 0.0;
     $fbCount2 = count($fallbackPalette);
     $dIdx2 = 0;
     foreach ($spData as $k => $v) {
-        $base = $statusPalette[$k] ?? ($fbCount2 > 0 ? $fallbackPalette[$dIdx2 % $fbCount2] : '#94A3B8');
-        $color = $base;
+        $color = $statusPalette[$k] ?? ($fbCount2 > 0 ? $fallbackPalette[$dIdx2 % $fbCount2] : '#94A3B8');
         $dLegend2[] = [$k, $v, $color];
         if ($v > 0) {
-            $cumCount2 += $v;
-            $endAbs = ($cumCount2 / $spTotal) * 360.0 - 90.0;
-            $endStop = ($k === $spLastKey) ? 270.0 : $endAbs;
+            $cumCount2 += (float)$v;
+            $endStop = ($cumCount2 / (float)$spTotal) * 360.0;
+            // Segmen terakhir ditutup tepat ke 360deg agar tidak ada celah desimal.
+            $endStop = ($endStop >= 359.999) ? 360.0 : $endStop;
             $dStops2[] = "{$color} {$from2}deg {$endStop}deg";
             $from2 = $endStop;
         }
         $dIdx2++;
+    }
+    if ($from2 < 360.0 && $dStops2) {
+        $dStops2[] = "{$color} {$from2}deg 360deg";
     }
     $conic2 = $dStops2 ? implode(', ', $dStops2) : '#E4E7EC 0deg 360deg';
   @endphp

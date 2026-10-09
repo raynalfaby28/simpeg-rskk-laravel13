@@ -98,12 +98,22 @@ $notifications = $user->appNotifications()->latest()->limit(5)->get();
             ->sortDesc()
             ->take(6);
 
-        $perPendidikan = Employee::with('pendidikanAkhir')
+        // Pendidikan terakhir: ambil dari riwayat pendidikan formal (jenjang tertinggi),
+        // fallback ke kolom pendidikan_akhir_id, lalu 'Tanpa Data' bila benar-benar kosong.
+        $perPendidikan = Employee::with(['educations.educationLevel', 'pendidikanAkhir'])
             ->get()
-            ->groupBy(fn ($e) => $e->pendidikanAkhir?->name ?? 'Tanpa Data')
+            ->groupBy(function ($e) {
+                $edu = $e->educations
+                    ->filter(fn ($x) => $x->kategori !== 'non_formal')
+                    ->sortByDesc(fn ($x) => $x->educationLevel?->urutan ?? 0)
+                    ->first();
+
+                return $edu?->educationLevel?->name
+                    ?? $e->pendidikanAkhir?->name
+                    ?? 'Tanpa Data';
+            })
             ->map->count()
-            ->sortDesc()
-            ->take(6);
+            ->sortDesc();
 
         $perJenis = Employee::get()
             ->groupBy(fn ($e) => $e->status_pegawai ?: 'Belum Diisi')
