@@ -208,10 +208,10 @@
         ['Pegawai Nonaktif', $totals['nonaktif'], '#DC2626', '#F87171',
           '<path stroke-linecap="round" stroke-linejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>',
           route('employees.index', ['status' => 'nonaktif'])],
-        ['Jumlah Pegawai BLUD', $totals['blud'], '#0D9488', '#2DD4BF',
+        ['Jumlah BLUD', $totals['blud'], '#0D9488', '#2DD4BF',
           '<path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>',
           route('employees.index', ['status' => 'blud'])],
-        ['Jumlah Pegawai Outsourcing', $totals['outsourcing'], '#7C3AED', '#A78BFA',
+        ['Jumlah Outsourcing', $totals['outsourcing'], '#7C3AED', '#A78BFA',
           '<path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>',
           route('employees.index', ['status' => 'outsourcing'])],
         ['Pegawai Online', $totals['online'], '#16A34A', '#86EFAC',
@@ -238,7 +238,7 @@
   {{-- Grafik Row 1: Unit + Status (donut) --}}
   @php
     /* Warna tetap per status sehingga konsisten di semua donut & KPI
-       (Outsourcing = ungu, sama seperti kartu Jumlah Pegawai Outsourcing). */
+       (Outsourcing = ungu, sama seperti kartu Jumlah Outsourcing). */
     $statusPalette = [
         'PNS' => '#2563EB',
         'PPPK' => '#0D9488',
@@ -350,7 +350,7 @@
     <div class="flex flex-wrap items-start justify-between gap-4 mb-5">
       <div>
         <h3 class="section-title mb-1">Komposisi Status Pegawai</h3>
-        <p class="text-[11.5px]" style="color:var(--ink-500)">Kategori dari kolom <b>Status Pegawai</b> di Data Pegawai. PNS, PPPK, Honorer, dan Kontrak termasuk <b>ruang lingkup BLUD</b>; Outsourcing (Security, Cleaning Service, dll) dihitung terpisah. Kartu <b>Jumlah Pegawai BLUD</b> di atas = jumlah PNS + PPPK + Honorer + Kontrak.</p>
+        <p class="text-[11.5px]" style="color:var(--ink-500)">Kategori dari kolom <b>Status Pegawai</b> di Data Pegawai. PNS, PPPK, Honorer, dan Kontrak termasuk <b>ruang lingkup BLUD</b>; Outsourcing (Security, Cleaning Service, dll) dihitung terpisah. Kartu <b>Jumlah BLUD</b> di atas = jumlah PNS + PPPK + Honorer + Kontrak.</p>
       </div>
       <span class="badge" style="background:var(--blue-50); color:var(--blue-700); border-color:var(--blue-100)">{{ $spTotal }} pegawai</span>
     </div>
